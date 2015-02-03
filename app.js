@@ -22,6 +22,8 @@ var ws = new WebSocketServer({
 var Room = require('./modules/room');
 var room = new Room();
 
+var Vec2 = require('./modules/vec2');
+
 
 room.on('update', function() {
     var self = this;
@@ -31,11 +33,27 @@ room.on('update', function() {
         tanks: { }
     };
 
-    room.forEach(function(client) {
-        var tank = client.tank;
-
-        // tank update
+    world.forEach('tank', function(tank) {
         tank.update();
+
+        world.forEachAround('tank', tank, function(tankOther) {
+            if (tank === tankOther)
+                return;
+
+            // check for collision
+            var dist = tank.pos.dist(tankOther.pos);
+            if (dist < tank.radius) {
+                Vec2.alpha
+                .setV(tank.pos)
+                .sub(tankOther.pos)
+                .norm()
+                .mulS(dist - tank.radius);
+
+                tank.pos.sub(Vec2.alpha);
+                tankOther.pos.add(Vec2.alpha);
+            }
+        });
+
         tank.node.root.updateItem(tank);
 
         // // shoot
@@ -173,3 +191,6 @@ ws.on('connection', function(client) {
 
     room.join(client);
 });
+
+
+console.log('started');

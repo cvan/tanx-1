@@ -12,7 +12,7 @@ function Tank(client) {
     this.owner = client;
     client.tank = this;
     // this.hue = Math.floor(Math.random() * 360);
-    this.radius = 2.0;
+    this.radius = 1.5;
     this.respawning = false;
 
     this.pos = Vec2.new(0, 0);
@@ -62,16 +62,13 @@ Tank.prototype.respawn = function() {
 Tank.prototype.update = function() {
     if (this.deleted) return;
 
-    if (this.movementDirection.len()) {
+    // movement
+    if (this.movementDirection.len())
         this.pos.add(Vec2.alpha.setV(this.movementDirection).norm().mulS(this.speed));
 
-        this.pos[0] = Math.max(0, Math.min(this.world.width, this.pos[0]));
-        this.pos[1] = Math.max(0, Math.min(this.world.height, this.pos[1]));
-    }
-
-    if (this.reloading && Date.now() - this.lastShot > 400) {
+    // reloading
+    if (this.reloading && Date.now() - this.lastShot > 400)
         this.reloading = false;
-    }
 };
 
 

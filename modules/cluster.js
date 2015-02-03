@@ -56,25 +56,28 @@ Cluster.prototype.update = function() {
 
 
 Cluster.prototype.updateItem = function(item) {
-    var nodeInd = this.ind(item.pos);
+    var radius = item.radius / 2 || 0;
+    item.pos[0] = Math.max(radius, Math.min(this.width * this.size - radius, item.pos[0]));
+    item.pos[1] = Math.max(radius, Math.min(this.height * this.size - radius, item.pos[1]));
+
+    var node = this.pick(item.pos);
 
     // didn't move
-    if (nodeInd === item.node.ind)
+    if (node === item.node)
         return;
 
     // moved out
-    var ind = item.node.indexOf(item);
-    item.node.splice(ind, 1);
-    item.node = null;
+    this.remove(item);
 
     // moved in
-    item.node = this.nodes[nodeInd];
-    item.node.push(item);
+    node.push(item);
+    item.node = node;
+    this.length++;
 };
 
 
 Cluster.prototype.ind = function(point) {
-    return Math.max(0, Math.min(this.width - 1, Math.floor(point[0] / this.size))) % this.width + Math.max(0, Math.min(this.height - 1, Math.floor(point[1] / this.size))) * this.width;
+    return (Math.max(0, Math.min(this.width - 1, Math.floor(point[0] / this.size))) % this.width) + (Math.max(0, Math.min(this.height - 1, Math.floor(point[1] / this.size))) * this.width);
 };
 
 
@@ -84,25 +87,37 @@ Cluster.prototype.pick = function(point) {
 
 
 Cluster.prototype.forEach = function(fn) {
+    var list = [ ];
+
+    // copy list
     for(var i = 0; i < this.nodes.length; i++) {
-        for(var e = 0; e < this.nodes[i].length; e++) {
-            fn(this.nodes[i][e]);
-        }
+        list = list.concat(this.nodes[i]);
     }
+
+    list.forEach(fn);
 };
 
 
-Cluster.prototype.forEachAround = function(point, range, fn) {
-    var node = this.pick(point);
+Cluster.prototype.forEachAround = function(item, range, fn) {
+    var list = [ ];
+    var node = this.pick(item.pos);
 
     for(var y = Math.max(0, node.y - range); y <= Math.min(this.height - 1, node.y + range); y++) {
         for(var x = Math.max(0, node.x - range); x <= Math.min(this.width - 1, node.x + range); x++) {
             var around = this.nodes[y * this.width + x];
-            for(var e = 0; e < around.length; e++) {
-                fn(around[e]);
+
+            if (item.node !== around) {
+                list = list.concat(around);
+            } else {
+                for(var e = 0; e < around.length; e++) {
+                    if (around[e] !== item)
+                        list.push(around[e]);
+                }
             }
         }
     }
+
+    list.forEach(fn);
 };
 
 
