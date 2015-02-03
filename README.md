@@ -1,6 +1,8 @@
 # tanx
 tanx multiplayer webgl game
 
+[online demo](http://playcanv.as/p/aP0oxhUr "tanx game")
+
 # installation & running
 
 ```
