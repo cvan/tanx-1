@@ -61,10 +61,19 @@ Client.prototype.send = function(name, data) {
         this._onerror(new Error('could not send message - name is reserved:', name));
         return;
     }
-    this.socket.write(JSON.stringify({
+
+    var msg = JSON.stringify({
         n: name,
         d: data
-    }));
+    });
+
+    this.socket.write(msg);
+
+    return msg;
+};
+
+Client.prototype.sendRaw = function(data) {
+    this.socket.write(data);
 };
 
 

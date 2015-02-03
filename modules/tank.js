@@ -13,7 +13,6 @@ function Tank(client) {
     client.tank = this;
     // this.hue = Math.floor(Math.random() * 360);
     this.radius = 1.5;
-    this.respawning = false;
 
     this.pos = Vec2.new(0, 0);
     this.movementDirection = Vec2.new();
@@ -26,6 +25,10 @@ function Tank(client) {
     this.shooting = false;
     this.lastShot = 0;
     this.reloading = false;
+
+    this.killer = null;
+    this.died = 0;
+    this.dead = false;
     this.respawned = Date.now();
 
     this.angle = Math.random() * 360;
@@ -42,7 +45,7 @@ Tank.prototype.delete = function() {
 
 
 Tank.prototype.shoot = function() {
-    if (this.deleted) return;
+    if (this.deleted || this.dead) return;
 
     this.reloading = true;
     this.lastShot = Date.now();
@@ -51,24 +54,33 @@ Tank.prototype.shoot = function() {
 
 
 Tank.prototype.respawn = function() {
-    if (this.deleted) return;
+    if (this.deleted || this.dead) return;
 
-    this.hp = 10;
-    this.respawned = Date.now();
-    this.pos = Vec2.new(Math.random() * this.world.width, Math.random() * this.world.height);
+    this.dead = true;
+    this.died = Date.now();
 };
 
 
 Tank.prototype.update = function() {
     if (this.deleted) return;
 
-    // movement
-    if (this.movementDirection.len())
-        this.pos.add(Vec2.alpha.setV(this.movementDirection).norm().mulS(this.speed));
+    if (! this.dead) {
+        // movement
+        if (this.movementDirection.len())
+            this.pos.add(Vec2.alpha.setV(this.movementDirection).norm().mulS(this.speed));
 
-    // reloading
-    if (this.reloading && Date.now() - this.lastShot > 400)
-        this.reloading = false;
+        // reloading
+        if (this.reloading && Date.now() - this.lastShot > 400)
+            this.reloading = false;
+    } else {
+        // dead
+        if (Date.now() - this.died > 3000) {
+            this.dead = false;
+            this.hp = 10;
+            this.respawned = Date.now();
+            this.pos = Vec2.new(Math.random() * this.world.width, Math.random() * this.world.height);
+        }
+    }
 };
 
 
@@ -81,6 +93,7 @@ Object.defineProperty(
                 owner: this.owner.id,
                 pos: [ parseFloat(this.pos[0].toFixed(3), 10), parseFloat(this.pos[1].toFixed(3), 10) ],
                 angle: Math.floor(this.angle),
+                dead: this.dead
             }
         },
         set: function() { }

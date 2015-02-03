@@ -93,7 +93,7 @@ Room.prototype.leave = function(client) {
     this.clients.splice(ind, 1);
 
     this.publish('tank.delete', {
-        id: client.id
+        id: client.tank.id
     });
 
     this.world.remove('tank', client.tank);
@@ -110,8 +110,13 @@ Room.prototype.forEach = function(fn) {
 
 
 Room.prototype.publish = function(name, data) {
+    var raw = null;
     for(var i = 0; i < this.clients.length; i++) {
-        this.clients[i].send(name, data);
+        if (! raw) {
+            raw = this.clients[i].send(name, data);
+        } else {
+            this.clients[i].sendRaw(raw);
+        }
     }
 };
 

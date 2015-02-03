@@ -9,7 +9,7 @@ function Bullet(owner) {
 
     this.owner = owner;
     this.id = ++bulletIds;
-    this.damage = 10.0;
+    this.damage = 3.0;
 
     this.speed = 1;
     this.pos = Vec2.new(parseFloat(this.owner.pos[0].toFixed(3), 10), parseFloat(this.owner.pos[1].toFixed(3), 10));
@@ -41,15 +41,15 @@ Object.defineProperty(
     Bullet.prototype,
     'data', {
         get: function() {
-            return [
-                this.id, // id
-                this.owner.owner.id, // client id
-                parseFloat(this.pos[0].toFixed(2), 10), // x
-                parseFloat(this.pos[1].toFixed(2), 10), // y
-                parseFloat(this.target[0].toFixed(2), 10), // target x
-                parseFloat(this.target[1].toFixed(2), 10), // target y,
-                parseFloat(this.speed.toFixed(4), 10) // speed
-            ]
+            return {
+                id: this.id,
+                tank: this.owner.id,
+                x: parseFloat(this.pos[0].toFixed(2), 10),
+                y: parseFloat(this.pos[1].toFixed(2), 10),
+                tx: parseFloat(this.target[0].toFixed(2), 10),
+                ty: parseFloat(this.target[1].toFixed(2), 10),
+                sp: parseFloat(this.speed.toFixed(4), 10)
+            }
         },
         set: function() { }
     }

@@ -29,50 +29,54 @@ room.on('update', function() {
     var self = this;
     var world = this.world;
 
-    var data = {
-        tanks: { }
-    };
+    // game state to send
+    var state = { };
 
+    // for each tank
     world.forEach('tank', function(tank) {
         tank.update();
 
-        world.forEachAround('tank', tank, function(tankOther) {
-            if (tank === tankOther)
-                return;
+        if (! tank.dead) {
+            // check for tank-tank collision
+            world.forEachAround('tank', tank, function(tankOther) {
+                if (tank === tankOther || tankOther.dead)
+                    return;
 
-            // check for collision
-            var dist = tank.pos.dist(tankOther.pos);
-            if (dist < tank.radius) {
-                Vec2.alpha
-                .setV(tank.pos)
-                .sub(tankOther.pos)
-                .norm()
-                .mulS(dist - tank.radius);
+                // check for collision
+                var dist = tank.pos.dist(tankOther.pos);
+                if (dist < tank.radius) {
+                    // collided
+                    Vec2.alpha
+                    .setV(tank.pos)
+                    .sub(tankOther.pos)
+                    .norm()
+                    .mulS(dist - tank.radius);
+                    // move apart
+                    tank.pos.sub(Vec2.alpha);
+                    tankOther.pos.add(Vec2.alpha);
+                }
+            });
+        }
 
-                tank.pos.sub(Vec2.alpha);
-                tankOther.pos.add(Vec2.alpha);
-            }
-        });
-
+        // update in world
         tank.node.root.updateItem(tank);
 
-        // // shoot
-        // if (tank.shooting && ! tank.reloading) {
-        //     var bullet = tank.shoot();
-        //     world.add('bullet', bullet);
-        //     self.publish('bullet.new', bullet.data);
-        // }
-    });
+        // shoot
+        if (! tank.dead && tank.shooting && ! tank.reloading) {
+            // new bullet
+            var bullet = tank.shoot();
+            world.add('bullet', bullet);
 
-    /*
-    // bullets to delete
-    var bulletsDeleting = [ ];
+            // publish
+            state.bullets = state.bullets || [ ];
+            state.bullets.push(bullet.data);
+        }
+    });
 
     // for each bullet
     world.forEach('bullet', function(bullet) {
         // bullet update
         bullet.update();
-        bullet.node.root.updateItem(bullet);
 
         var deleting = false;
         if (bullet.pos.dist(bullet.target) < 1) {
@@ -81,35 +85,33 @@ room.on('update', function() {
             deleting = true;
         } else {
             // for each tank around
-            world.forEachAround('tank', bullet.pos, function(tank) {
-                // already hit the target
-                if (deleting)
+            world.forEachAround('tank', bullet, function(tank) {
+                // refuse tank if any of conditions not met
+                if (deleting // bullet already hit the target
+                || tank.dead // tank is dead
+                || tank === bullet.owner // own bullet
+                || Date.now() - tank.respawned <= 1000 // tank just respawned
+                || tank.pos.dist(bullet.pos) > tank.radius) // no collision
                     return;
 
-                // own bullet
-                if (tank === bullet.owner)
-                    return;
-
-                // tank just respawned
-                if (Date.now() - tank.respawned <= 1000)
-                    return;
-
-                // too far
-                if (tank.pos.dist(bullet.pos) > tank.radius)
-                    return;
+                // hit
+                bullet.hit = true;
+                bullet.pos.setV(tank.pos);
 
                 if (! bullet.owner.deleted) {
                     // damage tank
                     tank.hp -= bullet.damage;
 
                     // killed, give point
-                    if (tank.hp <= 0)
-                        tank.owner.send('point', 1);
+                    if (tank.hp <= 0) {
+                        // add point
+                        // tank.owner.send('point', 1);
+                        // remember killer
+                        tank.killer = bullet.owner.id;
+                        // respawn
+                        tank.respawn();
+                    }
                 }
-
-                // hit
-                bullet.hit = true;
-                bullet.pos.setV(tank.pos);
 
                 // bullet delete
                 deleting = true;
@@ -117,63 +119,63 @@ room.on('update', function() {
             });
         }
 
-        if (deleting)
-            bulletsDeleting.push(bullet);
-    });
+        if (! deleting) {
+            // update in world
+            bullet.node.root.updateItem(bullet);
 
+        } else {
+            // delete bullet
 
-    // if there are bullets to delete (hit target)
-    if (bulletsDeleting.length) {
-        data.bulletsDelete = [ ];
+            // publish
+            if (bullet.publish) {
+                state.bulletsDelete = state.bulletsDelete || [ ];
 
-        // for each bullet awaiting deletion
-        for(var i = 0; i < bulletsDeleting.length; i++) {
-            var bullet = bulletsDeleting[i];
+                state.bulletsDelete.push({
+                    id: bullet.id,
+                    x: parseFloat(bullet.pos[0].toFixed(2), 10),
+                    y: parseFloat(bullet.pos[1].toFixed(2), 10)
+                });
+            }
 
             // remove from world
             world.remove('bullet', bullet);
             bullet.delete();
-
-            // publish
-            if (bullet.publish) {
-                // data
-                var item = {
-                    id: bullet.id
-                };
-
-                // if bullet hit, set position
-                if (bullet.hit)
-                    item.pos = [ parseFloat(bullet.pos[0].toFixed(2), 10), parseFloat(bullet.pos[1].toFixed(2), 10) ]
-
-                // add to data
-                data.bulletsDelete.push(item);
-            }
         }
-    }
-    */
+    });
 
     // for each tank
     world.forEach('tank', function(tank) {
-        // respawn
-        if (tank.hp <= 0) {
-            tank.respawn();
-            data.tanksRespawn = data.tanksRespawn || [ ];
-            data.tanksRespawn.push(tank.id);
+        // state data
+        state.tanks = state.tanks || [ ];
+
+        // tank data
+        var obj = {
+            id: tank.id,
+            x: parseFloat(tank.pos[0].toFixed(2), 10),
+            y: parseFloat(tank.pos[1].toFixed(2), 10),
+            a: Math.floor(tank.angle)
+        };
+
+        if (tank.dead) {
+            // dead
+            obj.dead = true;
+            // killer
+            if (tank.killer) {
+                obj.killer = tank.killer;
+                tank.killer = null;
+            }
+        } else {
+            // alive
+            obj.hp = parseFloat(tank.hp.toFixed(2), 10);
         }
 
-        // data
-        data.tanks[tank.id] = [
-            parseFloat(tank.pos[0].toFixed(2), 10), // x
-            parseFloat(tank.pos[1].toFixed(2), 10), // y
-            Math.floor(tank.angle), // angle
-            parseFloat(tank.hp.toFixed(2), 10), // hp
-            tank.node.ind // node ind
-        ];
+        // add to state
+        state.tanks.push(obj)
     });
 
-
-    // publish tank data
-    this.publish('update', data);
+    // publish data
+    if (Object.keys(state).length)
+        this.publish('update', state);
 });
 
 
