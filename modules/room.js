@@ -45,6 +45,9 @@ Room.prototype.join = function(client) {
     var tank = new Tank(client);
     this.world.add('tank', tank);
 
+    // random spawn position
+    tank.pos.setXY(Math.random() * this.world.width, Math.random() * this.world.height);
+
     // movement
     client.on('move', function(data) {
         if (data &&
