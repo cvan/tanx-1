@@ -105,7 +105,7 @@ room.on('update', function() {
                     // killed, give point
                     if (tank.hp <= 0) {
                         // add point
-                        // tank.owner.send('point', 1);
+                        bullet.owner.send('point', 1);
                         // remember killer
                         tank.killer = bullet.owner.id;
                         // respawn
