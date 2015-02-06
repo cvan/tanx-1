@@ -225,7 +225,7 @@ Float32Array.prototype.sat = function() {
         this.norm();
     }
     return this;
-}
+};
 
 
 // floor

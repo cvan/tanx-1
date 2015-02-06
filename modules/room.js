@@ -114,7 +114,7 @@ Room.prototype.forEach = function(fn) {
 
 Room.prototype.publish = function(name, data) {
     var raw = null;
-    for(var i = 0; i < this.clients.length; i++) {
+    for (var i = 0; i < this.clients.length; i++) {
         if (! raw) {
             raw = this.clients[i].send(name, data);
         } else {

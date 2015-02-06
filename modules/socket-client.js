@@ -39,8 +39,10 @@ Client.prototype._onerror = function(data) {
 
 
 Client.prototype._onmessage = function(data) {
+    var obj;
+
     try {
-        var obj = JSON.parse(data);
+        obj = JSON.parse(data);
     } catch(ex) {
         this._onerror(new Error('could not parse message - is it JSON?'));
         return;

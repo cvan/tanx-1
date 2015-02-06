@@ -94,7 +94,7 @@ Object.defineProperty(
                 pos: [ parseFloat(this.pos[0].toFixed(3), 10), parseFloat(this.pos[1].toFixed(3), 10) ],
                 angle: Math.floor(this.angle),
                 dead: this.dead
-            }
+            };
         },
         set: function() { }
     }

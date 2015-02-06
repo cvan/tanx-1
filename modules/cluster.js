@@ -6,8 +6,8 @@ function Cluster(args) {
     this.nodes = [ ];
     this.length = 0;
 
-    for(var y = 0; y < this.height; y++) {
-        for(var x = 0; x < this.width; x++) {
+    for (var y = 0; y < this.height; y++) {
+        for (var x = 0; x < this.width; x++) {
             var node = [ ];
             node.x = x;
             node.y = y;
@@ -46,9 +46,9 @@ Cluster.prototype.remove = function(item) {
 
 
 Cluster.prototype.update = function() {
-    for(var i = 0; i < this.nodes.length; i++) {
+    for (var i = 0; i < this.nodes.length; i++) {
         var e = this.nodes[i].length;
-        while(e--) {
+        while (e--) {
             this.updateItem(this.nodes[i][e]);
         }
     }
@@ -90,7 +90,7 @@ Cluster.prototype.forEach = function(fn) {
     var list = [ ];
 
     // copy list
-    for(var i = 0; i < this.nodes.length; i++) {
+    for (var i = 0; i < this.nodes.length; i++) {
         list = list.concat(this.nodes[i]);
     }
 
@@ -102,14 +102,14 @@ Cluster.prototype.forEachAround = function(item, range, fn) {
     var list = [ ];
     var node = this.pick(item.pos);
 
-    for(var y = Math.max(0, node.y - range); y <= Math.min(this.height - 1, node.y + range); y++) {
-        for(var x = Math.max(0, node.x - range); x <= Math.min(this.width - 1, node.x + range); x++) {
+    for (var y = Math.max(0, node.y - range); y <= Math.min(this.height - 1, node.y + range); y++) {
+        for (var x = Math.max(0, node.x - range); x <= Math.min(this.width - 1, node.x + range); x++) {
             var around = this.nodes[y * this.width + x];
 
             if (item.node !== around) {
                 list = list.concat(around);
             } else {
-                for(var e = 0; e < around.length; e++) {
+                for (var e = 0; e < around.length; e++) {
                     if (around[e] !== item)
                         list.push(around[e]);
                 }
