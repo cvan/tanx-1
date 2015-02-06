@@ -7,7 +7,12 @@
 // http
 var http = require('http');
 var server = http.createServer();
-server.listen(30043);
+var port = parseInt(process.env.TANX_PORT || '30043', 10) || 30043;
+var host = process.env.TANX_HOST || '0.0.0.0';
+server.listen(port, host, function () {
+    var host = server.address();
+    console.log('Listening on %s:%s', host.address, host.port);
+});
 
 
 // socket
@@ -193,6 +198,3 @@ ws.on('connection', function(client) {
 
     room.join(client);
 });
-
-
-console.log('started');
