@@ -1,7 +1,10 @@
-# tanx
-tanx multiplayer webgl game
+# ![tanx wordmark](tanx-wordmark.png "tanx wordmark")
 
-[online demo](http://playcanv.as/p/aP0oxhUr "tanx game")
+tanx multiplayer WebGL game
+
+[__online demo__](http://playcanv.as/p/aP0oxhUr "tanx game")
+
+![screenshot of tanx game](tanx-screenshot.png "screenshot of tanx game")
 
 # installation & running
 
