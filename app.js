@@ -37,24 +37,31 @@ room.on('update', function() {
         tank.update();
 
         if (! tank.dead) {
-            // check for tank-tank collision
+            // tank-tank collision
             world.forEachAround('tank', tank, function(tankOther) {
                 if (tank === tankOther || tankOther.dead)
                     return;
 
                 // check for collision
                 var dist = tank.pos.dist(tankOther.pos);
-                if (dist < tank.radius) {
+                if (dist < tank.radius + tankOther.radius) {
                     // collided
                     Vec2.alpha
                     .setV(tank.pos)
                     .sub(tankOther.pos)
                     .norm()
-                    .mulS(dist - tank.radius);
+                    .mulS(dist - (tank.radius + tankOther.radius));
                     // move apart
                     tank.pos.sub(Vec2.alpha);
                     tankOther.pos.add(Vec2.alpha);
                 }
+            });
+
+            // tank-block collision
+            world.forEachAround('block', tank, function(block) {
+                var point = block.collideCircle(tank);
+                if (point)
+                    tank.pos.add(point);
             });
         }
 
@@ -117,6 +124,21 @@ room.on('update', function() {
                 deleting = true;
                 bullet.publish = true;
             });
+
+            if (! deleting) {
+                // for each block around
+                world.forEachAround('block', bullet, function(block) {
+                    if (deleting)
+                        return;
+
+                    // collide with level block
+                    if (block.intersectPoint(bullet.pos)) {
+                        // bullet.pos.setV(block.pos);
+                        deleting = true;
+                        bullet.publish = true;
+                    }
+                });
+            }
         }
 
         if (! deleting) {

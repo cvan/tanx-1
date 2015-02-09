@@ -56,7 +56,7 @@ Cluster.prototype.update = function() {
 
 
 Cluster.prototype.updateItem = function(item) {
-    var radius = item.radius / 2 || 0;
+    var radius = item.radius || 0;
     item.pos[0] = Math.max(radius, Math.min(this.width * this.size - radius, item.pos[0]));
     item.pos[1] = Math.max(radius, Math.min(this.height * this.size - radius, item.pos[1]));
 

@@ -12,7 +12,7 @@ function Tank(client) {
     this.owner = client;
     client.tank = this;
     // this.hue = Math.floor(Math.random() * 360);
-    this.radius = 1.5;
+    this.radius = .75;
 
     this.pos = Vec2.new(0, 0);
     this.movementDirection = Vec2.new();

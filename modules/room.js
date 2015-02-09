@@ -1,6 +1,7 @@
 var EventEmitter = require('events').EventEmitter;
 var Loop = require('./loop');
 var World = require('./world');
+var Block = require('./block');
 var Tank = require('./tank');
 var Bullet = require('./bullet');
 var uuid = require('node-uuid');
@@ -13,11 +14,65 @@ function Room() {
     this.clients = [ ];
 
     this.world = new World({
-        width: 32,
-        height: 32,
+        width: 48,
+        height: 48,
         clusterSize: 4,
-        indexes: [ 'tank', 'bullet' ]
+        indexes: [ 'tank', 'bullet', 'block' ]
     });
+
+    var level = [
+        [ 13.5, 2, 1, 4 ],
+        [ 13.5, 12, 1, 2 ],
+        [ 12.5, 13.5, 3, 1 ],
+        [ 2, 13.5, 4, 1 ],
+        [ 11.5, 15, 1, 2 ],
+        [ 11.5, 23.5, 1, 5 ],
+
+        [ 10, 26.5, 4, 1 ],
+        [ 6, 26.5, 4, 1 ],
+
+        [ 2, 34.5, 4, 1 ],
+        [ 12.5, 34.5, 3, 1 ],
+        [ 13.5, 36, 1, 2 ],
+        [ 15, 36.5, 2, 1 ],
+        [ 13.5, 46, 1, 4 ],
+
+        [ 23.5, 36.5, 5, 1 ],
+        [ 26.5, 38, 1, 4 ],
+        [ 26.5, 42, 1, 4 ],
+
+        [ 34.5, 46, 1, 4 ],
+        [ 34.5, 36, 1, 2 ],
+        [ 35.5, 34.5, 3, 1 ],
+        [ 36.5, 33, 1, 2 ],
+        [ 46, 34.5, 4, 1 ],
+
+        [ 36.5, 24.5, 1, 5 ],
+        [ 38, 21.5, 4, 1 ],
+        [ 42, 21.5, 4, 1 ],
+
+        [ 46, 13.5, 4, 1 ],
+        [ 35.5, 13.5, 3, 1 ],
+        [ 34.5, 12, 1, 2 ],
+        [ 33, 11.5, 2, 1 ],
+        [ 34.5, 2, 1, 4 ],
+
+        [ 24.5, 11.5, 5, 1 ],
+        [ 21.5, 10, 1, 4 ],
+        [ 21.5, 6, 1, 4 ],
+
+        // center
+        [ 18.5, 22, 1, 6 ],
+        [ 19, 18.5, 2, 1 ],
+        [ 26, 18.5, 6, 1 ],
+        [ 29.5, 19, 1, 2 ],
+        [ 29.5, 26, 1, 6 ],
+        [ 29, 29.5, 2, 1 ],
+        [ 22, 29.5, 6, 1 ],
+        [ 18.5, 29, 1, 2 ]
+    ];
+
+    this.createBlocks(level);
 
     this.loop = new Loop({
         ups: 20
@@ -29,6 +84,18 @@ function Room() {
     });
 }
 Room.prototype = Object.create(EventEmitter.prototype);
+
+
+Room.prototype.createBlocks = function(data) {
+    for(var i = 0; i < data.length; i++) {
+        this.world.add('block', new Block({
+            x: data[i][0],
+            y: data[i][1],
+            width: data[i][2],
+            height: data[i][3]
+        }));
+    }
+};
 
 
 Room.prototype.join = function(client) {

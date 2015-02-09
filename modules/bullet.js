@@ -11,7 +11,7 @@ function Bullet(owner) {
     this.id = ++bulletIds;
     this.damage = 3.0;
 
-    this.speed = 1;
+    this.speed = .7;
     this.pos = Vec2.new(parseFloat(this.owner.pos[0].toFixed(3), 10), parseFloat(this.owner.pos[1].toFixed(3), 10));
     this.target = Vec2.new().setR((-this.owner.angle + 90) * (Math.PI / 180.0)).mulS(this.owner.range).add(this.pos);
 
