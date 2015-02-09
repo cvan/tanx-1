@@ -10,4 +10,8 @@ npm install
 node app.js
 ```
 
-Set your client to connect to `http://localhost:30043/socket`.
+fork [tanx client](https://playcanvas.com/project/45093/overview/tanx) project
+
+change `url` in `client.js`, at `new Socket` to `http://localhost:30043/socket`
+
+then run your game  
