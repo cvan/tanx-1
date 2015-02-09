@@ -7,7 +7,12 @@
 // http
 var http = require('http');
 var server = http.createServer();
-server.listen(30043);
+var port = parseInt(process.env.TANX_PORT || '30043', 10) || 30043;
+var host = process.env.TANX_HOST || '0.0.0.0';
+server.listen(port, host, function () {
+    var host = server.address();
+    console.log('Listening on %s:%s', host.address, host.port);
+});
 
 
 // socket
@@ -26,7 +31,6 @@ var Vec2 = require('./modules/vec2');
 
 
 room.on('update', function() {
-    var self = this;
     var world = this.world;
 
     // game state to send
@@ -88,18 +92,22 @@ room.on('update', function() {
         var deleting = false;
         if (bullet.pos.dist(bullet.target) < 1) {
             deleting = true;
-        } else if (bullet.pos[0] <= 0 || bullet.pos[1] <= 0 || bullet.pos[0] >= world.width || bullet.pos[1] >= world.height) {
+        } else if (bullet.pos[0] <= 0 ||
+                   bullet.pos[1] <= 0 ||
+                   bullet.pos[0] >= world.width ||
+                   bullet.pos[1] >= world.height) {
             deleting = true;
         } else {
             // for each tank around
             world.forEachAround('tank', bullet, function(tank) {
                 // refuse tank if any of conditions not met
-                if (deleting // bullet already hit the target
-                || tank.dead // tank is dead
-                || tank === bullet.owner // own bullet
-                || Date.now() - tank.respawned <= 1000 // tank just respawned
-                || tank.pos.dist(bullet.pos) > tank.radius) // no collision
+                if (deleting ||  // bullet already hit the target
+                    tank.dead ||  // tank is dead
+                    tank === bullet.owner ||  // own bullet
+                    Date.now() - tank.respawned <= 1000 ||  // tank just respawned
+                    tank.pos.dist(bullet.pos) > tank.radius) {  // no collision
                     return;
+                }
 
                 // hit
                 bullet.hit = true;
@@ -192,12 +200,13 @@ room.on('update', function() {
         }
 
         // add to state
-        state.tanks.push(obj)
+        state.tanks.push(obj);
     });
 
     // publish data
-    if (Object.keys(state).length)
+    if (Object.keys(state).length) {
         this.publish('update', state);
+    }
 });
 
 
@@ -215,6 +224,3 @@ ws.on('connection', function(client) {
 
     room.join(client);
 });
-
-
-console.log('started');

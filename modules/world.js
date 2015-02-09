@@ -13,7 +13,7 @@ function World(args) {
 
     this.clusters = { };
     if (args.indexes) {
-        for(var i = 0; i < args.indexes.length; i++) {
+        for (var i = 0; i < args.indexes.length; i++) {
             this.clusters[args.indexes[i]] = new Cluster({
                 size: size,
                 width: clusterWidth,
@@ -23,7 +23,7 @@ function World(args) {
     }
 
     this.length = 0;
-};
+}
 
 World.prototype.forEach = function(cluster, fn) {
     this.clusters[cluster].forEach(fn);
@@ -46,7 +46,7 @@ World.prototype.remove = function(cluster, item) {
 
 
 World.prototype.update = function() {
-    for(var key in this.clusters) {
+    for (var key in this.clusters) {
         this.clusters[key].update();
     }
 };
