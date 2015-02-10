@@ -33,3 +33,12 @@ tanx multiplayer WebGL game
         http://localhost:30043/socket
 
 4. Play your fork!
+
+## changelog
+
+##### v1.1.0
+* added Block object
+* added tank-level collision
+* added bullet-level collision
+* merged [@cvan](https://github.com/cvan) pull request: [allow host/port to be changed via environment variables; update README with verbose instructions](https://github.com/Maksims/tanx/commit/837c2f34588b4060d8112afe3002dc1d7fabc77e)
+* merged [@cvan](https://github.com/cvan) pull request: [code linting](https://github.com/Maksims/tanx/commit/f28b6c3259ed82f962957fd2f531cf916bbc6638)
