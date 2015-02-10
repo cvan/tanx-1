@@ -105,7 +105,7 @@ room.on('update', function() {
                     tank.dead ||  // tank is dead
                     tank === bullet.owner ||  // own bullet
                     Date.now() - tank.respawned <= 1000 ||  // tank just respawned
-                    tank.pos.dist(bullet.pos) > tank.radius) {  // no collision
+                    tank.pos.dist(bullet.pos) > (tank.radius + bullet.radius)) {  // no collision
                     return;
                 }
 
@@ -139,11 +139,12 @@ room.on('update', function() {
                     if (deleting)
                         return;
 
-                    // collide with level block
-                    if (block.intersectPoint(bullet.pos)) {
-                        // bullet.pos.setV(block.pos);
-                        deleting = true;
+                    // collision with level block
+                    var point = block.collideCircle(bullet);
+                    if (point) {
+                        bullet.pos.add(point);
                         bullet.publish = true;
+                        deleting = true;
                     }
                 });
             }
