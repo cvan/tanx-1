@@ -1,3 +1,5 @@
+'use strict';
+
 var Vec2 = require('./vec2');
 
 var bulletIds = 0;
@@ -22,6 +24,9 @@ function Bullet(owner) {
 
 
 Bullet.prototype.delete = function() {
+    if (this.deleted)
+        return;
+
     this.deleted = true;
     this.owner = null;
     this.pos.delete();
@@ -42,7 +47,7 @@ Object.defineProperty(
     Bullet.prototype,
     'data', {
         get: function() {
-            return {
+            var obj = {
                 id: this.id,
                 tank: this.owner.id,
                 x: parseFloat(this.pos[0].toFixed(2), 10),
@@ -51,6 +56,11 @@ Object.defineProperty(
                 ty: parseFloat(this.target[1].toFixed(2), 10),
                 sp: parseFloat(this.speed.toFixed(4), 10)
             };
+
+            if (this.special)
+                obj.s = true;
+
+            return obj;
         },
         set: function() { }
     }

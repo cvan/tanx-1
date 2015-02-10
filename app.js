@@ -28,9 +28,13 @@ var Room = require('./modules/room');
 var room = new Room();
 
 var Vec2 = require('./modules/vec2');
+var Pickable = require('./modules/pickable');
+
 
 
 room.on('update', function() {
+    var now = Date.now();
+    var self = this;
     var world = this.world;
 
     // game state to send
@@ -67,6 +71,43 @@ room.on('update', function() {
                 if (point)
                     tank.pos.add(point);
             });
+
+            // tank-pickable collision
+            world.forEachAround('pickable', tank, function(pickable) {
+                if (! pickable.collideCircle(tank))
+                    return;
+
+                switch(pickable.type) {
+                    case 'repair':
+                        // don't need repair
+                        if (tank.hp == 10)
+                            return;
+
+                        // recover a bit
+                        tank.hp = Math.min(10, tank.hp + 3);
+                        break;
+                    case 'damage':
+                        // give 3 bullets
+                        tank.bullets += 3;
+                        break;
+                    case 'shield':
+                        // set full shield
+                        tank.shield = 10;
+                        break;
+                }
+
+                world.remove('pickable', pickable);
+
+                state.pickableDelete = state.pickableDelete || [ ];
+                state.pickableDelete.push({
+                    id: pickable.id
+                });
+
+                self.pickables[pickable.ind].picked = now;
+                self.pickables[pickable.ind].item = null;
+
+                pickable.delete();
+            });
         }
 
         // update in world
@@ -83,6 +124,25 @@ room.on('update', function() {
             state.bullets.push(bullet.data);
         }
     });
+
+
+    // respawn pickables
+    for(var i = 0; i < this.pickables.length; i++) {
+        var pickable = this.pickables[i];
+        if (! pickable.item && (now - pickable.picked) > pickable.delay) {
+            pickable.item = new Pickable({
+                type: pickable.type,
+                x: pickable.x,
+                y: pickable.y
+            });
+            pickable.item.ind = i;
+            world.add('pickable', pickable.item);
+
+            state.pickable = state.pickable || [ ];
+            state.pickable.push(pickable.item.data);
+        }
+    }
+
 
     // for each bullet
     world.forEach('bullet', function(bullet) {
@@ -104,7 +164,7 @@ room.on('update', function() {
                 if (deleting ||  // bullet already hit the target
                     tank.dead ||  // tank is dead
                     tank === bullet.owner ||  // own bullet
-                    Date.now() - tank.respawned <= 1000 ||  // tank just respawned
+                    now - tank.respawned <= 1000 ||  // tank just respawned
                     tank.pos.dist(bullet.pos) > (tank.radius + bullet.radius)) {  // no collision
                     return;
                 }
@@ -115,16 +175,35 @@ room.on('update', function() {
 
                 if (! bullet.owner.deleted) {
                     // damage tank
-                    tank.hp -= bullet.damage;
+                    var damage = bullet.damage;
 
-                    // killed, give point
-                    if (tank.hp <= 0) {
-                        // add point
-                        bullet.owner.owner.send('point', 1);
-                        // remember killer
-                        tank.killer = bullet.owner.id;
-                        // respawn
-                        tank.respawn();
+                    tank.tHit = now;
+
+                    // if has shield
+                    if (tank.shield) {
+                        if (tank.shield > damage) {
+                            // enough to sustain whole damage
+                            tank.shield -= damage;
+                            damage = 0;
+                        } else {
+                            // shielded only some damage
+                            damage -= tank.sheild;
+                            tank.shield = 0;
+                        }
+                    }
+
+                    if (damage) {
+                        tank.hp -= damage;
+
+                        // killed, give point
+                        if (tank.hp <= 0) {
+                            // add point
+                            bullet.owner.owner.send('point', 1);
+                            // remember killer
+                            tank.killer = bullet.owner.id;
+                            // respawn
+                            tank.respawn();
+                        }
                     }
                 }
 

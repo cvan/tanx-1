@@ -17,10 +17,10 @@ function Room() {
         width: 48,
         height: 48,
         clusterSize: 4,
-        indexes: [ 'tank', 'bullet', 'block' ]
+        indexes: [ 'tank', 'bullet', 'pickable', 'block' ]
     });
 
-    var level = [
+    this.level = [
         [ 13.5, 2, 1, 4 ],
         [ 13.5, 12, 1, 2 ],
         [ 12.5, 13.5, 3, 1 ],
@@ -72,7 +72,75 @@ function Room() {
         [ 18.5, 29, 1, 2 ]
     ];
 
-    this.createBlocks(level);
+    // x, y, type, delay, lastSpawn
+    this.pickables = [
+        {
+            x: 23.5,
+            y: 9.5,
+            type: 'repair',
+            item: null,
+            delay: 5000,
+            picked: 0
+        }, {
+            x: 38.5,
+            y: 23.5,
+            type: 'repair',
+            item: null,
+            delay: 5000,
+            picked: 0
+        }, {
+            x: 24.5,
+            y: 38.5,
+            type: 'repair',
+            item: null,
+            delay: 5000,
+            picked: 0
+        }, {
+            x: 9.5,
+            y: 24.5,
+            type: 'repair',
+            item: null,
+            delay: 5000,
+            picked: 0
+        }, {
+            x: 13.5,
+            y: 15.5,
+            type: 'damage',
+            item: null,
+            delay: 5000,
+            picked: 0
+        }, {
+            x: 32.5,
+            y: 13.5,
+            type: 'damage',
+            item: null,
+            delay: 5000,
+            picked: 0
+        }, {
+            x: 34.5,
+            y: 32.5,
+            type: 'damage',
+            item: null,
+            delay: 5000,
+            picked: 0
+        }, {
+            x: 15.5,
+            y: 34.5,
+            type: 'damage',
+            item: null,
+            delay: 5000,
+            picked: 0
+        }, {
+            x: 24,
+            y: 24,
+            type: 'shield',
+            item: null,
+            delay: 15000,
+            picked: 0
+        }
+    ];
+
+    this.createBlocks(this.level);
 
     this.loop = new Loop({
         ups: 20
@@ -147,6 +215,15 @@ Room.prototype.join = function(client) {
             return;
 
         client.send('tank.new', tank.data);
+    });
+
+    // send all pickables
+    var pickables = [ ];
+    this.world.forEach('pickable', function(pickable) {
+        pickables.push(pickable.data);
+    });
+    client.send('update', {
+        pickable: pickables
     });
 
     // publish new tank
