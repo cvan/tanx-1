@@ -266,17 +266,19 @@ room.on('update', function() {
             a: Math.floor(tank.angle)
         };
 
-        if (tank.dead) {
-            // dead
+        if (tank.dead) { // dead
             obj.dead = true;
             // killer
             if (tank.killer) {
                 obj.killer = tank.killer;
                 tank.killer = null;
             }
-        } else {
-            // alive
+        } else { // alive
+            // hp
             obj.hp = parseFloat(tank.hp.toFixed(2), 10);
+            // shield
+            if (tank.shield)
+                obj.sp = tank.shield;
         }
 
         // add to state
