@@ -36,7 +36,10 @@ tanx multiplayer WebGL game
 
 ## changelog
 
-##### v1.1.0
+##### v1.2.1 (10.02.15)
+* added pickables: repair, bullets, shield
+
+##### v1.1.0 (09.02.15)
 * added Block object
 * added tank-level collision
 * added bullet-level collision
