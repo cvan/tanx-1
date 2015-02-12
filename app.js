@@ -27,9 +27,8 @@ var ws = new WebSocketServer({
 var Room = require('./modules/room');
 var room = new Room();
 
-var Vec2 = require('./modules/vec2');
 var Pickable = require('./modules/pickable');
-
+var Vec2 = require('./modules/vec2');
 
 
 room.on('update', function() {
@@ -295,6 +294,7 @@ room.on('update', function() {
 // start loop
 room.loop.start();
 
+var players = {};
 
 // socket connection
 ws.on('connection', function(client) {
@@ -304,5 +304,32 @@ ws.on('connection', function(client) {
         id: client.id
     });
 
-    room.join(client);
+    client.on('register.game', function(playerID) {
+        console.log('register.game', playerID);
+        players[playerID] = client;
+
+        room.join(client);
+    });
+
+    client.on('register.gamepad', function(playerID) {
+        console.log('register.gamepad', playerID);
+        if (!(playerID in players)) {
+            return console.warn('[register.gamepad] Player %s not yet in players:',
+                playerID, players);
+        }
+    });
+
+    client.on('gamepad', function(data) {
+        console.log('[gamepad] Sending gamepad message to client:', data);
+
+        var playerID = data.player;
+        var playerClient = players[playerID];
+
+        if (!(playerID in players)) {
+            return console.error('[gamepad] Player %s not yet in players:',
+                playerID, players);
+        }
+
+        playerClient.send('gamepad', data);
+    });
 });
