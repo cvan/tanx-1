@@ -179,7 +179,9 @@ Room.prototype.createBlocks = function(data) {
 
 
 Room.prototype.pickWeakestTeam = function() {
-    var list = this.teams.slice();
+    var list = this.teams.filter(function(item) {
+        return item.tanks < 4;
+    });
 
     // sort by number of tanks and then score
     list.sort(function(a, b) {
@@ -270,6 +272,9 @@ Room.prototype.join = function(client) {
 
     // publish new tank
     this.publish('tank.new', tank.data);
+
+    // event
+    this.emit('join');
 };
 
 
@@ -289,6 +294,9 @@ Room.prototype.leave = function(client) {
 
     this.world.remove('tank', client.tank);
     client.tank.delete();
+
+    // event
+    this.emit('leave');
 
     // TODO
     // publish user:remove

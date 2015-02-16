@@ -82,7 +82,7 @@ Cluster.prototype.ind = function(point) {
 
 
 Cluster.prototype.pick = function(point) {
-    return this.nodes[this.ind(point)];
+    return this.nodes[this.ind(point) || 0];
 };
 
 
