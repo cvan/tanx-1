@@ -20,6 +20,18 @@ function Room() {
         indexes: [ 'tank', 'bullet', 'pickable', 'block' ]
     });
 
+    this.score = 0;
+    this.scoreLast = 0;
+    this.teams = [ ];
+
+    for(var i = 0; i < 4; i++) {
+        this.teams.push({
+            id: i,
+            score: 0,
+            tanks: 0
+        });
+    }
+
     this.level = [
         [ 13.5, 2, 1, 4 ],
         [ 13.5, 12, 1, 2 ],
@@ -166,12 +178,34 @@ Room.prototype.createBlocks = function(data) {
 };
 
 
+Room.prototype.pickWeakestTeam = function() {
+    var list = this.teams.slice();
+
+    // sort by number of tanks and then score
+    list.sort(function(a, b) {
+        var t = a.tanks - b.tanks;
+        if (t === 0) {
+            return a.score - b.score;
+        } else {
+            return t;
+        }
+    });
+
+    // get list of same candidates
+    list = list.filter(function(item) {
+        return item.tanks === list[0].tanks && item.score === list[0].score;
+    });
+
+    // pick random
+    return list[Math.floor(list.length * Math.random())];
+};
+
+
 Room.prototype.join = function(client) {
     if (this.clients.indexOf(client) !== -1)
         return;
 
     this.clients.push(client);
-
     var self = this;
     client.on('disconnect', function() {
         self.leave(client);
@@ -180,8 +214,8 @@ Room.prototype.join = function(client) {
     var tank = new Tank(client);
     this.world.add('tank', tank);
 
-    // random spawn position
-    tank.pos.setXY(Math.random() * this.world.width, Math.random() * this.world.height);
+    tank.team = this.pickWeakestTeam();
+    tank.team.tanks++;
 
     // movement
     client.on('move', function(data) {
@@ -217,12 +251,20 @@ Room.prototype.join = function(client) {
         client.send('tank.new', tank.data);
     });
 
-    // send all pickables
+    // teams
+    var teams = [ ];
+    for(var i = 0; i < 4; i++)
+        teams[i] = this.teams[i].score;
+
+    // pickables
     var pickables = [ ];
     this.world.forEach('pickable', function(pickable) {
         pickables.push(pickable.data);
     });
+
+    // send data
     client.send('update', {
+        teams: teams,
         pickable: pickables
     });
 
@@ -238,6 +280,8 @@ Room.prototype.leave = function(client) {
         return;
 
     this.clients.splice(ind, 1);
+
+    client.tank.team.tanks--;
 
     this.publish('tank.delete', {
         id: client.tank.id

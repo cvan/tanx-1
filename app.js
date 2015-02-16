@@ -1,7 +1,7 @@
-// process.on('uncaughtException', function(err) {
-//     console.log('Caught exception: ' + err);
-//     console.log(err.stack);
-// });
+process.on('uncaughtException', function(err) {
+    console.log('Caught exception: ' + err);
+    console.log(err.stack);
+});
 
 
 // http
@@ -33,9 +33,11 @@ var Pickable = require('./modules/pickable');
 
 
 room.on('update', function() {
+    var room = this;
     var now = Date.now();
     var self = this;
     var world = this.world;
+    var winner = null;
 
     // game state to send
     var state = { };
@@ -91,6 +93,9 @@ room.on('update', function() {
                         tank.bullets += 3;
                         break;
                     case 'shield':
+                        // don't pickup if shield already full
+                        if (tank.shield == 10)
+                            return;
                         // set full shield
                         tank.shield = 10;
                         break;
@@ -164,6 +169,7 @@ room.on('update', function() {
                 if (deleting ||  // bullet already hit the target
                     tank.dead ||  // tank is dead
                     tank === bullet.owner ||  // own bullet
+                    tank.team === bullet.owner.team || // friendly tank
                     now - tank.respawned <= 1000 ||  // tank just respawned
                     tank.pos.dist(bullet.pos) > (tank.radius + bullet.radius)) {  // no collision
                     return;
@@ -197,8 +203,15 @@ room.on('update', function() {
 
                         // killed, give point
                         if (tank.hp <= 0) {
-                            // add point
-                            bullet.owner.owner.send('point', 1);
+                            // add score
+                            bullet.owner.score++;
+                            bullet.owner.team.score++;
+                            // winner?
+                            if (bullet.owner.team.score === 32)
+                                winner = bullet.owner.team;
+                            // total score
+                            room.score++;
+                            // bullet.owner.owner.send('point', 1);
                             // remember killer
                             tank.killer = bullet.owner.id;
                             // respawn
@@ -253,6 +266,32 @@ room.on('update', function() {
         }
     });
 
+    // winner?
+    if (winner) {
+        state.winner = {
+            team: winner.id,
+            scores: [ ]
+        };
+
+        // team scores
+        for(var i = 0; i < 4; i++) {
+            state.winner.scores[i] = this.teams[i].score;
+            this.teams[i].score = 0;
+        }
+
+        // tanks scores
+        world.forEach('tank', function(tank) {
+            tank.score = 0;
+            tank.scoreLast = -1;
+            tank.killer = null;
+            tank.respawn();
+        });
+
+        // room score
+        room.score = 0;
+        room.scoreLast = -1;
+    }
+
     // for each tank
     world.forEach('tank', function(tank) {
         // state data
@@ -269,9 +308,9 @@ room.on('update', function() {
         if (tank.dead) { // dead
             obj.dead = true;
             // killer
-            if (tank.killer) {
+            if (tank.killer !== undefined) {
                 obj.killer = tank.killer;
-                tank.killer = null;
+                tank.killer = undefined;
             }
         } else { // alive
             // hp
@@ -281,14 +320,27 @@ room.on('update', function() {
                 obj.sp = tank.shield;
         }
 
+        // score
+        if (tank.scoreLast !== tank.score) {
+            tank.scoreLast = tank.score;
+            obj.s = tank.score;
+        }
+
         // add to state
         state.tanks.push(obj);
     });
 
-    // publish data
-    if (Object.keys(state).length) {
-        this.publish('update', state);
+    // teams score
+    if (room.score !== room.scoreLast) {
+        room.scoreLast = room.score;
+
+        state.teams = [ ];
+        for(var i = 0; i < 4; i++)
+            state.teams[i] = this.teams[i].score;
     }
+
+    // publish data
+    this.publish('update', state);
 });
 
 

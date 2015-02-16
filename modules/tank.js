@@ -14,6 +14,9 @@ function Tank(client) {
     // this.hue = Math.floor(Math.random() * 360);
     this.radius = .75;
 
+    this.scoreLast = 0;
+    this.score = 0;
+
     this.pos = Vec2.new(0, 0);
     this.movementDirection = Vec2.new();
 
@@ -33,7 +36,7 @@ function Tank(client) {
 
     this.killer = null;
     this.died = 0;
-    this.dead = false;
+    this.dead = true;
     this.respawned = Date.now();
 
     this.angle = Math.random() * 360;
@@ -99,8 +102,10 @@ Tank.prototype.update = function() {
         if (now - this.died > 3000) {
             this.dead = false;
             this.hp = 10;
+            this.shield = 0;
+            this.bullets = 0;
             this.respawned = now;
-            this.pos = Vec2.new(Math.random() * this.world.width, Math.random() * this.world.height);
+            this.pos.setXY(2.5 + ((this.team.id % 2) * 35) + Math.floor(Math.random() * 9), 2.5 + (Math.floor(this.team.id / 2) * 35) + Math.floor(Math.random() * 9));
         }
     }
 };
@@ -112,12 +117,14 @@ Object.defineProperty(
         get: function() {
             return {
                 id: this.id,
+                team: this.team.id,
                 owner: this.owner.id,
                 pos: [ parseFloat(this.pos[0].toFixed(3), 10), parseFloat(this.pos[1].toFixed(3), 10) ],
                 angle: Math.floor(this.angle),
                 hp: this.hp,
                 shield: this.shield,
-                dead: this.dead
+                dead: this.dead,
+                score: this.score
             };
         },
         set: function() { }
