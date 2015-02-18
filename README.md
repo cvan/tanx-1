@@ -36,6 +36,12 @@ tanx multiplayer WebGL game
 
 ## changelog
 
+##### v1.3.0 (16.02.15)
+* added teams - 4 of [blue, red, green yellow] colours
+* added scores - teams and players have score
+* added end game scenario - first team to reach 32 kills
+* added lobby and rooms - each room can handle up to 16 players, then new room will be created
+
 ##### v1.2.1 (10.02.15)
 * added pickables: repair, bullets, shield
 
