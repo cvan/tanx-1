@@ -273,6 +273,14 @@ Room.prototype.join = function(client) {
     // publish new tank
     this.publish('tank.new', tank.data);
 
+    // receive client identification
+    client.on('ident', function(nickname) {
+        client.nickname = nickname;
+
+        // update individual tank data on clients
+        this.publish('tank.update', tank.data);
+    }.bind(this));
+
     // event
     this.emit('join');
 };
