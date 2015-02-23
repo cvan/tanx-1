@@ -25,7 +25,7 @@ GUTanx multiplayer WebGL game, fork of [Tanx](https://playcanvas.com/project/450
 
 ## Usage
 
-1. Fork the [tanx client](https://playcanvas.com/project/337962/overview/tanx) project.
+1. Fork the [GUTanx client](https://playcanvas.com/project/337962/overview/tanx) project.
 2. From your fork's page, click the __Code__ nav link to open `client.js` in the PlayCanvas code editor (you should be at `https://playcanvas.com/editor/code/<id-of-your-fork>/client.js`).
 3. Find the line that reads `var socket = … = new Socket` and change the `url` like so:
 
