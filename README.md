@@ -1,11 +1,10 @@
-# tanx
+# GUTanx
 
-tanx multiplayer WebGL game
+GUTanx multiplayer WebGL game, fork of [Tanx](https://playcanvas.com/project/45093/overview/tanx) with added features powered by [GameUp](https://gameup.io).
 
-[__online demo__](http://playcanv.as/p/aP0oxhUr "tanx game")
+[Click here to play!](http://gutanx.gameup.io)
 
-
-## installation & running
+## Installation & running
 
 1. Install the Node dependencies:
 
@@ -24,9 +23,9 @@ tanx multiplayer WebGL game
     * `TANX_PORT=30043`
     * `TANX_HOST='0.0.0.0'`
 
-## usage
+## Usage
 
-1. Fork the [tanx client](https://playcanvas.com/project/45093/overview/tanx) project.
+1. Fork the [tanx client](https://playcanvas.com/project/337962/overview/tanx) project.
 2. From your fork's page, click the __Code__ nav link to open `client.js` in the PlayCanvas code editor (you should be at `https://playcanvas.com/editor/code/<id-of-your-fork>/client.js`).
 3. Find the line that reads `var socket = … = new Socket` and change the `url` like so:
 
@@ -34,7 +33,7 @@ tanx multiplayer WebGL game
 
 4. Play your fork!
 
-## changelog
+## Changelog
 
 ##### v1.3.0 (16.02.15)
 * added teams - 4 of [blue, red, green yellow] colours
