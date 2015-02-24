@@ -99,7 +99,7 @@ Tank.prototype.update = function() {
         }
     } else {
         // dead
-        if (now - this.died > 3000) {
+        if (now - this.died > 5000) {
             this.dead = false;
             this.hp = 10;
             this.shield = 0;
