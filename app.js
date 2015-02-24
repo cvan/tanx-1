@@ -29,6 +29,8 @@ var lobby = new Lobby();
 
 // gamepad players
 var players = {};
+var gamepads = {};
+var colors = {};
 
 // socket connection
 ws.on('connection', function(client) {
@@ -52,6 +54,13 @@ ws.on('connection', function(client) {
             return console.warn('[register.gamepad] Player %s not yet in players:',
                 playerID, players);
         }
+
+        gamepads[playerID] = client;
+        if (playerID in colors) {
+            client.send('gamepad.color', colors[playerID]);
+        } else {
+            console.warn('no color yet for player', playerID);
+        }
     });
 
     client.on('gamepad', function(data) {
@@ -60,11 +69,28 @@ ws.on('connection', function(client) {
         var playerID = data.player;
         var playerClient = players[playerID];
 
-        if (!(playerID in players)) {
+        if (!playerClient) {
             return console.error('[gamepad] Player %s not yet in players:',
-                playerID, players);
+                playerID);
         }
 
         playerClient.send('gamepad', data);
     });
+
+    client.on('gamepad.color', function(data) {
+        console.log('[gamepad] Sending gamepad color to gamepad:', data);
+
+        var playerID = data.player;
+        var gamepadClient = gamepads[playerID];
+
+        colors[playerID] = data.color;
+
+        if (!gamepadClient) {
+            return console.error('[gamepad] Player %s not yet in gamepads:',
+                playerID);
+        }
+
+        gamepadClient.send('gamepad.color', data.color);
+    });
+
 });
