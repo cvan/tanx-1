@@ -270,8 +270,10 @@ Room.prototype.join = function(client) {
         pickable: pickables
     });
 
+    // notify self of team
+    client.send('tank.team', tank.data.team);
+
     // publish new tank
-    tank.data.self = true;
     this.publish('tank.new', tank.data);
 
     // event
