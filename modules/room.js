@@ -271,6 +271,7 @@ Room.prototype.join = function(client) {
     });
 
     // publish new tank
+    tank.data.self = true;
     this.publish('tank.new', tank.data);
 
     // event
