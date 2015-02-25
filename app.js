@@ -3,12 +3,13 @@ var http = require('http');
 var WebSocketServer = require('./modules/socket-server');
 
 
-function Server(requestListener) {
+function Server(requestListener, opts) {
+    opts = opts || {};
     var server = http.createServer(requestListener);
 
     var node_env = process.env.NODE_ENVIRONMENT || 'development';
-    var listen_port = parseInt(process.env.TANX_PORT || '30043', 10) || 30043;
-    var listen_host = process.env.TANX_HOST || '0.0.0.0';
+    var listen_port = opts.port || parseInt(process.env.TANX_PORT || '30043', 10) || 30043;
+    var listen_host = opts.host || process.env.TANX_HOST || '0.0.0.0';
 
     server.listen(listen_port, listen_host, function () {
         var host = server.address();
