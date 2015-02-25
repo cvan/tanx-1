@@ -1,6 +1,10 @@
 var http = require('http');
 
+var logger = require('./modules/logger');
 var WebSocketServer = require('./modules/socket-server');
+
+var log = logger.log;
+var warn = logger.warn;
 
 
 function Server(requestListener, opts) {
@@ -13,8 +17,8 @@ function Server(requestListener, opts) {
 
     server.listen(listen_port, listen_host, function () {
         var host = server.address();
-        console.log('[%s] Server listening on %s:%s',
-                    node_env, host.address, host.port);
+        log('[%s] Server listening on %s:%s',
+            node_env, host.address, host.port);
     });
 
 
@@ -34,45 +38,45 @@ function Server(requestListener, opts) {
 
     // socket connection
     ws.on('connection', function(client) {
-        // console.log('connected', client.id);
+        log('[connection] Client connected:', client.id);
 
         client.send('init', {
             id: client.id
         });
 
         client.on('register.game', function(playerID) {
-            console.log('[register.game] Player:', playerID);
+            log('[register.game] Player:', playerID);
 
             // We don't want to spam the gamepad with events from the lobby.
             lobby.join(client);
         });
 
         client.on('register.gamepad', function(playerID) {
-            console.log('[register.gamepad] Player:', playerID);
+            log('[register.gamepad] Player:', playerID);
 
             client.player = playerID;
 
             var waiting = waitingSocketGamepads[playerID];
 
             if (waiting && waiting !== client && waiting.socket.readyState === 1) {
-                console.log('[register.gamepad] Other gamepad found');
+                log('[register.gamepad] Other gamepad found');
                 client.gamepadPeer = waiting;
                 waiting.gamepadPeer = client;
                 waitingSocketGamepads[playerID] = null;
                 waiting.send('gamepad.found');
                 client.send('gamepad.found');
             } else {
-                console.log('[register.gamepad] No other gamepad found');
+                log('[register.gamepad] No other gamepad found');
                 // I am waiting for you.
                 waitingSocketGamepads[playerID] = client;
             }
         });
 
         client.on('disconnect', function() {
-            console.log('[disconnect]');
+            log('[disconnect]');
             var gamepadPeer = client.gamepadPeer;
             if (gamepadPeer) {
-                console.log('[disconnect] unsetting gamepadPeer', gamepadPeer.player);
+                log('[disconnect] unsetting gamepadPeer', gamepadPeer.player);
                 gamepadPeer.gamepadPeer = null;
                 client.gamepadPeer = null;
                 waitingSocketGamepads[gamepadPeer.player] = gamepadPeer;
@@ -80,7 +84,7 @@ function Server(requestListener, opts) {
         });
 
         client.on('gamepad', function(data) {
-            console.log('[gamepad] Forwarding gamepad message to gamepad:', data);
+            log('[gamepad] Forwarding gamepad message to gamepad:', data);
             if (client.gamepadPeer) {
                 client.gamepadPeer.send('gamepad', data);
             }
@@ -90,13 +94,13 @@ function Server(requestListener, opts) {
             var playerID = data.player;
             var peerGamepad = waitingRtcGamepads[playerID];
 
-            console.log('\n\n[rtc.peer] Peer request made for player', playerID);
+            log('\n\n[rtc.peer] Peer request made for player', playerID);
 
             // Initiator or not.
             if (peerGamepad && peerGamepad !== client &&
                 peerGamepad.socket.readyState === 1) {
 
-                console.log('[rtc.peer] Found a waiting peer');
+                log('[rtc.peer] Found a waiting peer');
 
                 // Send a wink!
                 client.send('rtc.peer', {initiator: true});
@@ -111,16 +115,16 @@ function Server(requestListener, opts) {
             } else {
                 // Waiting for a friend.
                 waitingRtcGamepads[playerID] = client;
-                console.log('[rtc.peer] No peer found yet, waiting…');
+                log('[rtc.peer] No peer found yet, waiting…');
             }
         });
 
         client.on('rtc.signal', function (data) {
-            console.log('[rtc.signal] Signal recieved');
+            log('[rtc.signal] Signal recieved');
             if (client.peer) {
                 client.peer.send('rtc.signal', data);
             } else {
-                console.warn('[rtc.signal] Signal with no peer!');
+                warn('[rtc.signal] Signal with no peer!');
             }
         });
 
@@ -146,8 +150,8 @@ if (require.main === module) {
 }
 
 process.on('uncaughtException', function(err) {
-    console.log('Caught exception: ' + err);
-    console.log(err.stack);
+    log('Caught exception: ' + err);
+    log(err.stack);
 });
 
 module.exports = Server;
