@@ -147,3 +147,6 @@ ws.on('connection', function(client) {
         waitingGamepads[playerID] = client;
     });
 });
+
+
+exports = server;
