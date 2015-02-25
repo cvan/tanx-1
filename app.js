@@ -162,4 +162,4 @@ process.on('uncaughtException', function(err) {
     console.log(err.stack);
 });
 
-exports = Server;
+module.exports = Server;
