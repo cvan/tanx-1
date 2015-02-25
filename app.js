@@ -28,9 +28,14 @@ var Lobby = require('./modules/lobby');
 var lobby = new Lobby();
 
 // gamepad players
+var colors = {};
+var gamepads = {};
 var players = {};
 var gamepads = {};
 var colors = {};
+
+// rtc controller
+var waitingGamepads = {};
 
 // socket connection
 ws.on('connection', function(client) {
@@ -93,4 +98,50 @@ ws.on('connection', function(client) {
         gamepadClient.send('gamepad.color', data.color);
     });
 
+    client.on('rtc.peer', function (data) {
+        var playerID = data.playerID;
+        var peerGamepad = waitingGamepads[playerID];
+
+        console.log('\n\n\n[rtc.peer] Peer request made for player', playerID);
+
+        // Initiator or not.
+        if (peerGamepad && peerGamepad !== client &&
+            peerGamepad.socket.readyState === 1) {
+
+            console.log('[rtc.peer] Found a waiting peer');
+
+            // Send a wink!
+            client.send('rtc.peer', {initiator: true});
+            peerGamepad.send('rtc.peer');
+
+            // Swap numbers ;)
+            client.peer = peerGamepad;
+            peerGamepad.peer = client;
+
+            // Wait no more!
+            waitingGamepads[playerID] = null;
+        } else {
+            // Waiting for a friend.
+            waitingGamepads[playerID] = client;
+            console.log('[rtc.peer] No peer found yet, waiting…');
+        }
+    });
+
+    client.on('rtc.signal', function (data) {
+        console.log('[rtc.signal] Signal recieved');
+        if (client.peer) {
+            client.peer.send('rtc.signal', data);
+        } else {
+            console.warn('[rtc.signal] Signal with no peer!');
+        }
+    });
+
+    client.on('rtc.close', function (data) {
+        var peer = client.peer;
+        if (peer) {
+            peer.send('rtc.close');
+            peer.peer = null;
+            client.peer = null;
+        }
+    });
 });
