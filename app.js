@@ -46,7 +46,7 @@ ws.on('connection', function(client) {
     });
 
     client.on('register.game', function(playerID) {
-        console.log('register.game', playerID);
+        console.log('[register.game] player:', playerID);
         players[playerID] = client;
 
         // We don't want to spam the gamepad with events from the lobby.
@@ -54,7 +54,7 @@ ws.on('connection', function(client) {
     });
 
     client.on('register.gamepad', function(playerID) {
-        console.log('register.gamepad', playerID);
+        console.log('[register.gamepad] player:', playerID);
         if (!(playerID in players)) {
             return console.warn('[register.gamepad] Player %s not yet in players:',
                 playerID, players);
@@ -83,7 +83,7 @@ ws.on('connection', function(client) {
     });
 
     client.on('gamepad.color', function(data) {
-        console.log('[gamepad] Sending gamepad color to gamepad:', data);
+        console.log('[gamepad.color] Sending tank color to gamepad:', data);
 
         var playerID = data.player;
         var gamepadClient = gamepads[playerID];
@@ -91,7 +91,7 @@ ws.on('connection', function(client) {
         colors[playerID] = data.color;
 
         if (!gamepadClient) {
-            return console.error('[gamepad] Player %s not yet in gamepads:',
+            return console.error('[gamepad.color] Player %s not yet in gamepads:',
                 playerID);
         }
 
@@ -102,7 +102,7 @@ ws.on('connection', function(client) {
         var playerID = data.playerID;
         var peerGamepad = waitingGamepads[playerID];
 
-        console.log('\n\n\n[rtc.peer] Peer request made for player', playerID);
+        console.log('\n\n[rtc.peer] Peer request made for player', playerID);
 
         // Initiator or not.
         if (peerGamepad && peerGamepad !== client &&
