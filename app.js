@@ -28,15 +28,9 @@ function Server(requestListener, opts) {
     var Lobby = require('./modules/lobby');
     var lobby = new Lobby();
 
-    // gamepad players
-    var colors = {};
-    var gamepads = {};
-    var players = {};
-    var gamepads = {};
-    var colors = {};
-
-    // rtc controller
-    var waitingGamepads = {};
+    // gamepads
+    var waitingSocketGamepads = {};
+    var waitingRtcGamepads = {};
 
     // socket connection
     ws.on('connection', function(client) {
@@ -47,61 +41,54 @@ function Server(requestListener, opts) {
         });
 
         client.on('register.game', function(playerID) {
-            console.log('[register.game] player:', playerID);
-            players[playerID] = client;
+            console.log('[register.game] Player:', playerID);
 
             // We don't want to spam the gamepad with events from the lobby.
             lobby.join(client);
         });
 
         client.on('register.gamepad', function(playerID) {
-            console.log('[register.gamepad] player:', playerID);
-            if (!(playerID in players)) {
-                return console.warn('[register.gamepad] Player %s not yet in players:',
-                    playerID, players);
-            }
+            console.log('[register.gamepad] Player:', playerID);
 
-            gamepads[playerID] = client;
-            if (playerID in colors) {
-                client.send('gamepad.color', colors[playerID]);
+            client.player = playerID;
+
+            var waiting = waitingSocketGamepads[playerID];
+
+            if (waiting && waiting !== client && waiting.socket.readyState === 1) {
+                console.log('[register.gamepad] Other gamepad found');
+                client.gamepadPeer = waiting;
+                waiting.gamepadPeer = client;
+                waitingSocketGamepads[playerID] = null;
+                waiting.send('gamepad.found');
+                client.send('gamepad.found');
             } else {
-                console.warn('no color yet for player', playerID);
+                console.log('[register.gamepad] No other gamepad found');
+                // I am waiting for you.
+                waitingSocketGamepads[playerID] = client;
+            }
+        });
+
+        client.on('disconnect', function() {
+            console.log('[disconnect]');
+            var gamepadPeer = client.gamepadPeer;
+            if (gamepadPeer) {
+                console.log('[disconnect] unsetting gamepadPeer', gamepadPeer.player);
+                gamepadPeer.gamepadPeer = null;
+                client.gamepadPeer = null;
+                waitingSocketGamepads[gamepadPeer.player] = gamepadPeer;
             }
         });
 
         client.on('gamepad', function(data) {
-            console.log('[gamepad] Sending gamepad message to client:', data);
-
-            var playerID = data.player;
-            var playerClient = players[playerID];
-
-            if (!playerClient) {
-                return console.error('[gamepad] Player %s not yet in players:',
-                    playerID);
+            console.log('[gamepad] Forwarding gamepad message to gamepad:', data);
+            if (client.gamepadPeer) {
+                client.gamepadPeer.send('gamepad', data);
             }
-
-            playerClient.send('gamepad', data);
-        });
-
-        client.on('gamepad.color', function(data) {
-            console.log('[gamepad.color] Sending tank color to gamepad:', data);
-
-            var playerID = data.player;
-            var gamepadClient = gamepads[playerID];
-
-            colors[playerID] = data.color;
-
-            if (!gamepadClient) {
-                return console.error('[gamepad.color] Player %s not yet in gamepads:',
-                    playerID);
-            }
-
-            gamepadClient.send('gamepad.color', data.color);
         });
 
         client.on('rtc.peer', function (data) {
-            var playerID = data.playerID;
-            var peerGamepad = waitingGamepads[playerID];
+            var playerID = data.player;
+            var peerGamepad = waitingRtcGamepads[playerID];
 
             console.log('\n\n[rtc.peer] Peer request made for player', playerID);
 
@@ -120,10 +107,10 @@ function Server(requestListener, opts) {
                 peerGamepad.peer = client;
 
                 // Wait no more!
-                waitingGamepads[playerID] = null;
+                waitingRtcGamepads[playerID] = null;
             } else {
                 // Waiting for a friend.
-                waitingGamepads[playerID] = client;
+                waitingRtcGamepads[playerID] = client;
                 console.log('[rtc.peer] No peer found yet, waiting…');
             }
         });
@@ -145,7 +132,7 @@ function Server(requestListener, opts) {
                 peer.peer = null;
                 client.peer = null;
             }
-            waitingGamepads[playerID] = client;
+            waitingRtcGamepads[playerID] = client;
         });
     });
 
