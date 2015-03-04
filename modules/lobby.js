@@ -218,7 +218,7 @@ Lobby.prototype.update = function() {
                             bullet.owner.score++;
                             bullet.owner.team.score++;
                             // winner?
-                            if (bullet.owner.team.score === 5)
+                            if (bullet.owner.team.score === 10)
                                 winner = bullet.owner.team;
                             // total score
                             room.score++;
