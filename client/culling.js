@@ -17,6 +17,9 @@ pc.script.create('culling', function (app) {
             var culled = false;
             var item = null;
             
+            if (! this.list)
+                return;
+            
             for(var i = 0; i < this.list.length; i++) {
                 item = this.list[i];
                 if (item.ignore)
@@ -33,10 +36,16 @@ pc.script.create('culling', function (app) {
         },
         
         add: function(item) {
+            if (! this.list)
+                return;
+
             this.list.push(item);
         },
         
         remove: function(item) {
+            if (! this.list)
+                return;
+
             var ind = this.list.indexOf(item);
             if (ind === -1)
                 return;
