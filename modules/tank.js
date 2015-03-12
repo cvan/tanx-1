@@ -35,7 +35,7 @@ function Tank(client) {
     this.reloading = false;
 
     this.killer = null;
-    this.died = 0;
+    this.died = Date.now();
     this.dead = true;
     this.respawned = Date.now();
 
@@ -99,7 +99,7 @@ Tank.prototype.update = function() {
         }
     } else {
         // dead
-        if (now - this.died > 3000) {
+        if (now - this.died > 5000) {
             this.dead = false;
             this.hp = 10;
             this.shield = 0;
@@ -119,7 +119,6 @@ Object.defineProperty(
                 id: this.id,
                 team: this.team.id,
                 owner: this.owner.id,
-                nickname: this.owner.nickname,
                 pos: [ parseFloat(this.pos[0].toFixed(3), 10), parseFloat(this.pos[1].toFixed(3), 10) ],
                 angle: Math.floor(this.angle),
                 hp: this.hp,

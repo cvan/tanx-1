@@ -5,32 +5,36 @@ pc.script.create('leaderboardBox', function (context) {
     var LeaderboardBox = function (entity) {
         this.entity = entity;
 
+        var css = function() {/*
+            #leaderboardButton {
+               position: absolute;
+               width: 32px;
+               height: 32px;
+               line-height: 32px;
+               top: 16px;
+               right: 96px;
+               z-index: 1;
+               cursor: pointer;
+               color: #eee;
+               text-align: center;
+               background-color: rgba(33, 34, 36, .75);
+            }
+            @media all and (max-width: 640px) {
+                #leaderboardButton {
+                    top: 8px;
+                    right: 48px;
+                }
+            }
+        */};
+        css = css.toString().trim();
+        css = css.slice(css.indexOf('/*') + 2).slice(0, -3);
+        var style = document.createElement('style');
+        style.innerHTML = css;
+        document.querySelector('head').appendChild(style);
+
         var button = this.button = document.createElement('div');
         button.id = 'leaderboardButton';
-        button.style.position = 'absolute';
-        button.style.width = '0px';
-        button.style.height = '0px';
-        button.style.top = '16px';
-        button.style.right = '16px';
-        button.style.zIndex = 1;
-        button.style.borderRight = '64px solid #212224';
-        button.style.borderTop = '64px solid transparent';
-        button.style.cursor = 'pointer';
-        button.style.textAlign = 'right';
-        
-        var l = document.createElement('div');
-        l.style.position = 'absolute';
-        l.style.fontSize = '24px';
-        l.style.fontFamily = 'Helvetica, sans-serif';
-        l.style.color = '#5e7578';
-        l.style.bottom = '0px';
-        l.style.right = '0px';
-        l.style.width = '0px';
-        l.style.lineHeight = '0px';
-        l.textContent = 'L';
-        button.appendChild(l);
-        
-        button.script = this;
+        button.textContent = 'L';
         document.body.appendChild(button);
         
         var modal = this.modal = document.createElement('div');
@@ -46,7 +50,7 @@ pc.script.create('leaderboardBox', function (context) {
         modal.style.backgroundColor = '#212224';
         // modal.style.color = '#2ecc71';
         modal.style.display = 'none';
-        modal.style.zIndex = 2;
+        modal.style.zIndex = 21;
         modal.style.cursor = 'pointer';
         modal.style.textAlign = 'center';
         
@@ -55,7 +59,6 @@ pc.script.create('leaderboardBox', function (context) {
         document.body.appendChild(modal);
         
         document.body.style.fontWeight = '100';
-        
         
         modal.addEventListener('click', function() {
             this.modal.style.display = 'none';
@@ -110,13 +113,20 @@ pc.script.create('leaderboardBox', function (context) {
 
     LeaderboardBox.prototype.setSize = function(size) {
         this.button.style.borderRightWidth = size + 'px';
-        this.button.style.borderTopWidth = size + 'px';
+        this.button.style.borderBottomWidth = size + 'px';
         
-        this.button.style.top = (16 * 4 + size) + 'px';
-        
-        this.button.childNodes[0].style.bottom = (size * .33) + 'px';
+        this.button.childNodes[0].style.top = (size * .33) + 'px';
         this.button.childNodes[0].style.right = -Math.floor(size * .66) + 'px';
         this.button.childNodes[0].style.fontSize = Math.floor(size / 3) + 'px';
+
+        // this.button.style.borderRightWidth = size + 'px';
+        // this.button.style.borderTopWidth = size + 'px';
+        
+        // this.button.style.top = (16 * 4 + size) + 'px';
+        
+        // this.button.childNodes[0].style.bottom = (size * .33) + 'px';
+        // this.button.childNodes[0].style.right = -Math.floor(size * .66) + 'px';
+        // this.button.childNodes[0].style.fontSize = Math.floor(size / 3) + 'px';
     };
 
     return LeaderboardBox;

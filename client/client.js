@@ -1,4 +1,9 @@
 pc.script.create('client', function (context) {
+    
+    var tmpVec = new pc.Vec3();
+    var uri = new pc.URI(window.location.href);
+    var query = uri.getQuery();
+    var gamepadNum = query.gamepad;
 
     var Client = function (entity) {
         this.entity = entity;
@@ -9,6 +14,13 @@ pc.script.create('client', function (context) {
         document.body.style.cursor = 'none';
     };
     
+    var getParameterByName = function(name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+            results = regex.exec(location.search);
+        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    };
+
     function guLoadUser(client) {
         localforage.getItem('gamertoken', function(err, gamertoken) {
             if (gamertoken) {
@@ -48,7 +60,7 @@ pc.script.create('client', function (context) {
     function ident(client) {
         client.guclient.getGamer(client.gamertoken, {
             success: function(status, data) {
-                client.socket.send('ident', data.nickname);
+                client.socket.send('user.name', data.nickname);
             },
             error: function(status, response) {
                 console.log(response);
@@ -64,12 +76,20 @@ pc.script.create('client', function (context) {
             this.bullets = context.root.getChildren()[0].script.bullets;
             this.pickables = context.root.getChildren()[0].script.pickables;
             this.teams = context.root.getChildren()[0].script.teams;
+            this.profile = context.root.getChildren()[0].script.profile;
             
             var self = this;
-            // var socket = this.socket = new Socket({ url: 'http://7e32ae86.ngrok.com/socket' });
-            // var socket = this.socket = new Socket({ url: 'http://localhost:30043/socket' });
-            // var socket = this.socket = new Socket({ url: 'http://tanx.playcanvas.com/socket' });
-            var socket = this.socket = new Socket({ url: 'http://gutanx.gameup.io:8080/socket' });
+            var servers = {
+                'local': 'http://localhost:30043/socket', // local
+                // 'us': 'http://54.67.22.188:30043/socket', // us
+                // 'default': 'https://tanx.playcanvas.com/socket' // load balanced
+                'default': 'http://gutanx.gameup.io:8080/socket'
+            };
+
+            var env = getParameterByName('server') || 'default';
+            var url = env && servers[env] || servers['default'];
+
+            var socket = this.socket = new Socket({ url: url });
             
             this.connected = false;
             
@@ -80,21 +100,25 @@ pc.script.create('client', function (context) {
             socket.on('init', function(data) {
                 self.id = data.id;
                 self.connected = true;
-
+                
                 guLoadUser(self);
+                
+                users.on(self.id + ':name', function(name) {
+                    self.profile.set(name);
+                });
             });
+            
+            users.bind(socket);
             
             socket.on('tank.new', function(data) {
                 self.tanks.new(data);
             });
             
-            socket.on('tank.update', function(data) {
-                self.tanks.update(data);
-            });
-            
             socket.on('tank.delete', function(data) {
                 self.tanks.delete(data);
             });
+            
+            var dataQueue = [ ];
             
             socket.on('update', function(data) {
                 // bullets add
@@ -106,7 +130,7 @@ pc.script.create('client', function (context) {
                 // bullets delete
                 if (data.bulletsDelete) {
                     for(var i = 0; i < data.bulletsDelete.length; i++)
-                        self.bullets.delete(data.bulletsDelete[i]);
+                        self.bullets.finish(data.bulletsDelete[i]);
                 }
                 
                 // pickables add
@@ -118,7 +142,7 @@ pc.script.create('client', function (context) {
                 // pickable delete
                 if (data.pickableDelete) {
                     for(var i = 0; i < data.pickableDelete.length; i++)
-                        self.pickables.delete(data.pickableDelete[i]);
+                        self.pickables.finish(data.pickableDelete[i]);
                 }
                 
                 // tanks update
@@ -148,41 +172,93 @@ pc.script.create('client', function (context) {
             context.mouse.on('mousedown', this.onMouseDown, this);
             context.mouse.on('mouseup', this.onMouseUp, this);
             
-            this.mouseState = false;
+            this.gamepadConnected = false;
+            this.gamepadActive = false;
+            
+            window.addEventListener('gamepadconnected', function () {
+                this.gamepadConnected = true;
+            }.bind(this));
+            window.addEventListener('gamepaddisconnected', function () {
+                this.gamepadConnected = false;
+            }.bind(this));
+            
+            // Chrome doesn't have the gamepad events, and we can't
+            // feature detect them in Firefox unfortunately.
+            if ('chrome' in window) {
+                // This is a lie, but it lets us begin polling.
+                this.gamepadConnected = true;
+            }
         },
 
         update: function (dt) {
             if (! this.connected)
                 return;
                 
-            // collect keyboard input
+            // WASD movement
             var movement = [
                 context.keyboard.isPressed(pc.input.KEY_D) - context.keyboard.isPressed(pc.input.KEY_A),
                 context.keyboard.isPressed(pc.input.KEY_S) - context.keyboard.isPressed(pc.input.KEY_W)
             ];
             
+            // ARROWs movement
             movement[0] += context.keyboard.isPressed(pc.input.KEY_RIGHT) - context.keyboard.isPressed(pc.input.KEY_LEFT);
             movement[1] += context.keyboard.isPressed(pc.input.KEY_DOWN) - context.keyboard.isPressed(pc.input.KEY_UP);
             
             // gamepad controls
-            // AUTHOR: Potch
-            
-            // gamepad movement axes
-            movement[0] += context.gamepads.getAxis(pc.PAD_1, pc.PAD_L_STICK_X);
-            movement[1] += context.gamepads.getAxis(pc.PAD_1, pc.PAD_L_STICK_Y);
-            
-            // gamepad firing axes
-            var gpx = context.gamepads.getAxis(pc.PAD_1, pc.PAD_R_STICK_X);
-            var gpy = context.gamepads.getAxis(pc.PAD_1, pc.PAD_R_STICK_Y);
-            
-            // gamepad shooting
-            if (gpx * gpx + gpy * gpy > .25) {
-                this.shoot(true);
-                this.gpShot = true;
-            } else {
-                if (this.gpShot) {
-                    this.shoot(false);
-                    this.gpShot = false;
+            // AUTHORS: Potch and cvan
+            if (context.gamepads.gamepadsSupported && this.gamepadConnected) {
+                var gamepadIdx = gamepadNum - 1;
+
+                if (!context.gamepads.poll()[gamepadIdx]) {
+                    // If it was active at one point, reset things.
+                    if (self.gamepadActive && self.link && self.link.mouse) {
+                        self.link.mouse.move = true;
+                        this.gamepadActive = false;
+                    }
+                } else {
+                    // Gamepad movement axes.
+                    var x = context.gamepads.getAxis(gamepadIdx, pc.PAD_L_STICK_X);
+                    var y = context.gamepads.getAxis(gamepadIdx, pc.PAD_L_STICK_Y);
+                    if ((x * x + y * y) > .25) {
+                        movement[0] += x;
+                        movement[1] += y;
+                    }
+
+                    // Gamepad firing axes.
+                    var gpx = context.gamepads.getAxis(gamepadIdx, pc.PAD_R_STICK_X);
+                    var gpy = context.gamepads.getAxis(gamepadIdx, pc.PAD_R_STICK_Y);
+
+                    if (x || y || gpx || gpy) {
+                        this.gamepadActive = true;
+
+                        if (this.link && this.link.mouse) {
+                            this.link.mouse.move = false;
+
+                            // TODO: Figure out how to hide cursor without destroying
+                            // (so we can show the cursor again if gamepad is disconnected).
+                            var target = context.root.findByName('target');
+                            if (target) {
+                                target.destroy();
+                            }
+                        }
+                    }
+
+                    // Gamepad shooting.
+                    if (gpx * gpx + gpy * gpy > .25) {
+                        this.shoot(true);
+
+                        if (this.link) {
+                            this.link.mPos = [
+                                gpx / 2 * (context.graphicsDevice.width / 2),
+                                gpy / 2 * (context.graphicsDevice.height / 2)
+                            ];
+
+                            this.link.angle = Math.floor(Math.atan2(gpx, gpy) / (Math.PI / 180) + 45);
+                            this.link.link.targeting(this.link.angle);
+                        }
+                    } else {
+                        this.shoot(false);
+                    }
                 }
             }
             

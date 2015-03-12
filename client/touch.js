@@ -45,6 +45,10 @@ pc.script.create('touch', function (context) {
             document.body.appendChild(this.joyRight);
             
             this.lastMove = Date.now();
+            this.lastRender = Date.now();
+            
+            this.lastVec = [ 0, 0 ];
+            this._hidden = true;
         }
     };
 
@@ -63,6 +67,9 @@ pc.script.create('touch', function (context) {
         },
         
         resize: function(force) {
+            if (! this.joyLeft || ! this.joyRight)
+                return;
+                
             var size = Math.max(2, Math.min(4, Math.floor(window.innerWidth / 240))) * 69 + 24;
             
             if (size !== this.size || force) {
@@ -80,22 +87,30 @@ pc.script.create('touch', function (context) {
             }
         },
         
+        hidden: function(state) {
+            if (this._hidden == state)
+                return;
+                
+            this._hidden = state;
+            this.resize(true);
+        },
+        
         drawHex: function(ctx, color, stroke) {
+            if (this._hidden)
+                return;
+                
             ctx.beginPath();
-            for (var i = 0; i < 7; i++) {
-                ctx.lineTo(this.size / 2 * Math.sin(Math.PI * 2 / 6 * i) + this.size / 2, this.size / 2 * Math.cos(Math.PI * 2 / 6 * i) + this.size / 2);
+            for (var i = 0; i < 11; i++) {
+                ctx.lineTo(this.size / 2 * Math.sin(Math.PI * 2 / 10 * (i + .5)) + this.size / 2, this.size / 2 * Math.cos(Math.PI * 2 / 10 * (i + .5)) + this.size / 2);
             }
             ctx.fillStyle = color;
             ctx.fill();
-            if (stroke) {
-                ctx.strokeStyle = stroke;
-                ctx.stroke();
-            }
         },
 
         update: function (dt) {
-            if (! this.touch) return;
-            
+            if (! this.touch)
+                return;
+
             this.resize();
             
             if (this.client.connected) {
@@ -113,6 +128,8 @@ pc.script.create('touch', function (context) {
                     }
                 }.bind(this));
                 
+                var aimed = false;
+                
                 this.forEach('down', function(touch) {
                     if (! touch.joy) return;
                    
@@ -126,18 +143,19 @@ pc.script.create('touch', function (context) {
                     var ctx = touch.joy.ctx;
                     ctx.clearRect(0, 0, touch.joy.width, touch.joy.height);
                     
-                    this.drawHex(ctx, 'rgba(255, 255, 255, .03)', '#2ecc71');
-    
-                    ctx.beginPath();
-                    for (var i = 0; i < 7; i++) {
-                        ctx.lineTo(24 * Math.sin(Math.PI * 2 / 6 * i) + this.size / 2 + this.vec.x, 24 * Math.cos(Math.PI * 2 / 6 * i) + this.size / 2 + this.vec.y);
+                    if (! this._hidden) {
+                        this.drawHex(ctx, 'rgba(255, 255, 255, .03)', '#2ecc71');
+        
+                        ctx.beginPath();
+                        for (var i = 0; i < 11; i++) {
+                            ctx.lineTo(24 * Math.sin(Math.PI * 2 / 10 * i) + this.size / 2 + this.vec.x, 24 * Math.cos(Math.PI * 2 / 10 * i) + this.size / 2 + this.vec.y);
+                        }
+                        ctx.fillStyle = 'rgba(255, 255, 255, .2)';
+                        ctx.fill();
                     }
-                    ctx.fillStyle = 'rgba(255, 255, 255, .1)';
-                    ctx.fill();
-                    ctx.strokeStyle = '#2ecc71';
-                    ctx.stroke();
                     
                     if (touch.joy == this.joyRight && this.link.link) {
+                        aimed = true;
                         this.link.mPos = [ (this.vec.x / (this.size / 2)) * (context.graphicsDevice.width / 2), (this.vec.y / (this.size / 2)) * (context.graphicsDevice.height / 2) ];
                         this.vec.normalize();
                         
@@ -149,33 +167,51 @@ pc.script.create('touch', function (context) {
                         this.link.link.targeting(this.link.angle);
                         this.client.shoot(true);
                     } else if (touch.joy == this.joyLeft) {
-                        if (Date.now() - this.lastMove > 200) {
+                        this.tmp.copy(this.vec);
+                        this.vec.normalize();
+                        
+                        var t =      this.vec.x * Math.sin(Math.PI * 0.75) - this.vec.y * Math.cos(Math.PI * 0.75);
+                        this.vec.y = this.vec.y * Math.sin(Math.PI * 0.75) + this.vec.x * Math.cos(Math.PI * 0.75);
+                        this.vec.x = t;
+                        
+                        if (Date.now() - this.lastMove > 100) {
                             this.lastMove = Date.now();
-                            this.vec.normalize();
+
+                            var moveX = parseFloat(this.vec.x.toFixed(1));
+                            var moveY = parseFloat(this.vec.y.toFixed(1));
                             
-                            var t =      this.vec.x * Math.sin(Math.PI * 0.75) - this.vec.y * Math.cos(Math.PI * 0.75);
-                            this.vec.y = this.vec.y * Math.sin(Math.PI * 0.75) + this.vec.x * Math.cos(Math.PI * 0.75);
-                            this.vec.x = t;
-    
-                            this.client.socket.send('move', [ this.vec.x, this.vec.y ]);
+                            if (this.lastVec[0] !== moveX || this.lastVec[1] !== moveY) {
+                                this.lastVec[0] = moveX;
+                                this.lastVec[1] = moveY;
+                                this.client.socket.send('move', this.lastVec);
+                            }
+                        }
+                        
+                        if (! aimed) {
+                            this.link.mPos = [ (this.tmp.x / (this.size / 2)) * (context.graphicsDevice.width / 2), (this.tmp.y / (this.size / 2)) * (context.graphicsDevice.height / 2) ];
+                            this.link.angle = Math.floor(Math.atan2(this.vec.x, this.vec.y) / (Math.PI / 180));
+                            this.link.link.targeting(this.link.angle);
                         }
                     }
-                    
                 }.bind(this));
-                
+
                 this.forEach('end', function(touch) {
                     if (! touch.joy) return;
                     
                     var ctx = touch.joy.ctx;
                     ctx.clearRect(0, 0, touch.joy.width, touch.joy.height);
                     
-                    this.drawHex(ctx, 'rgba(255, 255, 255, .1)', '#2ecc71');
+                    if (! this._hidden)
+                        this.drawHex(ctx, 'rgba(255, 255, 255, .1)', '#2ecc71');
     
                     if (touch.joy == this.joyRight) {
                         this.client.shoot(false);
-                        this.link.mPos = [ 0, 0 ];
                     } else {
                         this.client.socket.send('move', [ 0, 0 ]);
+                    }
+                    
+                    if (! aimed || touch.joy == this.joyRight) {
+                        this.link.mPos = [ 0, 0 ];
                     }
                 }.bind(this));
             }

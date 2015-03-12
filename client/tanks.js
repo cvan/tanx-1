@@ -15,15 +15,14 @@ pc.script.create('tanks', function (context) {
             this.camera = context.root.findByName('camera');
             this.minimap = context.root.getChildren()[0].script.minimap;
             this.teams = context.root.getChildren()[0].script.teams;
-            this.hpBar = context.root.getChildren()[0].script.hp;
+            // this.hpBar = context.root.getChildren()[0].script.hp;
             
-            this.explodeSound = context.root.findByName('explode_sound');
+            this.own = null;
         },
         
         new: function(args) {
             var newTank = this.tank.clone();
             newTank.setName('tank_' + args.id);
-            newTank.nickname = args.nickname;
             newTank.owner = args.owner;
             newTank.enabled = true;
             newTank.setPosition(args.pos[0], 0, args.pos[1]);
@@ -31,8 +30,10 @@ pc.script.create('tanks', function (context) {
             
             this.teams.tankAdd(newTank.script.tank, args.team);
             
-            if (args.owner == this.client.id)
+            if (args.owner == this.client.id) {
                 this.camera.script.link.link = newTank;
+                this.own = newTank;
+            }
             
             this.tanks.addChild(newTank);
         },
@@ -41,14 +42,8 @@ pc.script.create('tanks', function (context) {
             var tank = this.tanks.findByName('tank_' + args.id);
             if (! tank) return;
             
+            tank.fire('destroy');
             tank.destroy();
-        },
-        
-        update: function(data) {
-            var tank = this.tanks.findByName('tank_' + data.id);
-            if (! tank) return;
-
-            tank.nickname = data.nickname;
         },
         
         updateData: function(data) {
@@ -56,11 +51,8 @@ pc.script.create('tanks', function (context) {
                 var tankData = data[i];
                 
                 var tank = this.tanks.findByName('tank_' + tankData.id);
-                
                 if (! tank) continue;
                 tank = tank.script.tank;
-                
-                tank.nickname = tankData.nickname;
                 
                 // movement
                 if (tankData.hasOwnProperty('x'))
@@ -75,10 +67,7 @@ pc.script.create('tanks', function (context) {
                     tank.setHP(tankData.hp);
                 
                 // shield
-                tank.sp = tankData.sp || 0;
-                
-                // dead/alive
-                tank.dead = tankData.dead || false;
+                tank.setSP(tankData.sp || 0);
 
                 // killer
                 if (tank.own && tankData.hasOwnProperty('killer')) {
@@ -86,9 +75,12 @@ pc.script.create('tanks', function (context) {
                     tank.killer = this.tanks.findByName('tank_' + tankData.killer);
                 }
                 
+                // dead/alive
+                tank.setDead(tankData.dead || false);
+                
                 // score
-                if (tank.own && tankData.hasOwnProperty('s'))
-                    this.hpBar.setScore(tankData.s);
+                // if (tank.own && tankData.hasOwnProperty('s'))
+                    // this.hpBar.setScore(tankData.s);
             }
             
             this.minimap.draw();

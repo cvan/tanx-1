@@ -6,6 +6,7 @@ pc.script.create('minimap', function (context) {
         this.size = 4;
         
         this.canvas = this.prepareCanvas();
+        this.canvas.id = 'minimap';
         this.canvas.width = this.sizeInc * this.size;
         this.canvas.height = this.sizeInc * this.size;
         document.body.appendChild(this.canvas);
@@ -16,24 +17,49 @@ pc.script.create('minimap', function (context) {
         this.circles = [ ];
         this.lastCircle = Date.now();
         this.circleLife = 1000;
+        
+        this.touch = 'ontouchstart' in document.documentElement;
+        
+        var css = function() {/*
+            #minimap {
+               display: block;
+               position: absolute;
+               z-index: 1;
+               background-color: #212224;
+               cursor: default;
+               transition: opacity 200ms, visibility 200ms;
+               -webkit-transform: rotate(45deg);
+               -moz-transform: rotate(45deg);
+               -ms-transform: rotate(45deg);
+               transform: rotate(45deg);
+               border: 4px solid #5e7578;
+               opacity: 0;
+               visibility: hidden;
+            }
+            #minimap.active {
+               opacity: 1;
+               visibility: visible;
+            }
+            @media all and (max-width: 640px) {
+                #minimap {
+                    display: none;
+                }
+            }
+        */};
+        css = css.toString().trim();
+        css = css.slice(css.indexOf('/*') + 2).slice(0, -3);
+        
+        var style = document.createElement('style');
+        style.innerHTML = css;
+        document.querySelector('head').appendChild(style);
     };
 
     Minimap.prototype = {
         prepareCanvas: function() {
             var canvas = document.createElement('canvas');
-            canvas.className = 'minimap';
-            canvas.style.display = 'block';
-            canvas.style.position = 'absolute';
-            canvas.style.top = (10 * this.size + 16) + 'px';
-            canvas.style.right = (10 * this.size + 16) + 'px';
-            canvas.style.zIndex = 1;
-            canvas.style.backgroundColor = '#212224';
-            canvas.style.border = '4px solid #5e7578';
-            canvas.style.cursor = 'default';
-            canvas.style.webkitTransform = 'rotate(45deg)';
-            canvas.style.mozTransform = 'rotate(45deg)';
-            canvas.style.msTransform = 'rotate(45deg)';
-            canvas.style.transform = 'rotate(45deg)';
+            canvas.id = 'minimap';
+            canvas.style.bottom = (10 * this.size + 16) + 'px';
+            canvas.style.left = (10 * this.size + 16) + 'px';
             
             return canvas;
         },
@@ -107,33 +133,34 @@ pc.script.create('minimap', function (context) {
         },
         
         resize: function(force) {
+            if (this.touch)
+                return;
+                
             var size = Math.max(2, Math.min(4, Math.floor(window.innerWidth / 240)));
             if (size !== this.size || force) {
                 this.size = size;
                 this.canvas.width = this.sizeInc * this.size;
                 this.canvas.height = this.sizeInc * this.size;
                 
-                this.canvas.style.top = (10 * this.size + 16) + 'px';
-                this.canvas.style.right = (10 * this.size + 16) + 'px';
-                
-                var info = document.getElementById('infoButton');
-                if (info) {
-                    info.script.setSize(34 * this.size - 22);
-                }
-                var leaderboard = document.getElementById('leaderboardButton');
-                if (leaderboard) {
-                    leaderboard.script.setSize(34 * this.size - 22);
-                }
-                var fs = document.getElementById('fullscreenButton');
-                if (fs) {
-                    fs.script.setSize(34 * this.size - 22);
-                }
+                this.canvas.style.bottom = (10 * this.size + 16) + 'px';
+                this.canvas.style.left = (10 * this.size + 16) + 'px';
                 
                 this.ctx.font = Math.floor(12 + (10 * (this.size / 3))) + 'px Arial';
             }
         },
         
+        state: function(state) {
+            if (state && ! this.touch) {
+                this.canvas.classList.add('active');
+            } else {
+                this.canvas.classList.remove('active');
+            }
+        },
+        
         draw: function() {
+            if (! this.canvas.classList.contains('active') || window.innerWidth < 640 || this.touch)
+                return;
+                
             this.resize();
 
             var ctx = this.ctx;
@@ -142,54 +169,6 @@ pc.script.create('minimap', function (context) {
             ctx.setTransform(1, 0, 0, 1, 0, 0);            
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-            // grid
-            // var gridSize = this.canvas.width / 12;
-            // ctx.beginPath();
-            // for(var x = 1; x < 12; x++) {
-            //     ctx.moveTo(Math.floor(gridSize * x) + 0.5, 0);
-            //     ctx.lineTo(Math.floor(gridSize * x) + 0.5, this.canvas.height);
-            // }
-            // for(var y = 1; y < 12; y++) {
-            //     ctx.moveTo(0, Math.floor(gridSize * y) + 0.5);
-            //     ctx.lineTo(this.canvas.width, Math.floor(gridSize * y) + 0.5);
-            // }
-            // ctx.strokeStyle = '#313234';
-            // ctx.stroke();
-            
-            
-            // // radar circles
-            // i = this.circles.length;
-            // while(i--) {
-            //     if (Date.now() - this.circles[i].time > this.circleLife) {
-            //         this.circles.splice(i, 1);
-            //     } else {
-            //         size = ((this.circleLife - (Date.now() - this.circles[i].time)) / this.circleLife);
-            //         ctx.beginPath();
-            //         ctx.arc(this.circles[i].x, this.circles[i].z, Math.max(1, (1.0 - size) * 8 * this.size), 0, Math.PI * 2, false);
-            //         ctx.strokeStyle = 'rgba(46, 204, 113, ' + Math.min(1.0, size * 2) + ')';
-            //         ctx.stroke();
-            //     }
-            // }
-
-            
-            // score
-            for(i = 0; i < 4; i++) {
-                var x = (i % 2 * 35 + 6.5) / 48 * this.canvas.width;
-                var y = (Math.floor(i / 2) * 35 + 6.5) / 48 * this.canvas.height;
-                ctx.save();
-                ctx.beginPath();
-                ctx.translate(x, y);
-                ctx.rotate(-Math.PI / 4);
-                ctx.fillStyle = 'rgb(' + this.teams.colors[i].join(',') + ')';
-                // ctx.strokeStyle = '#000';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                // ctx.lineWidth = 2;
-                // ctx.strokeText(this.teams.scores[i], 0, 0);
-                ctx.fillText(this.teams.scores[i], 0, 0);
-                ctx.restore();
-            }
-            
             // bullets
             ctx.beginPath();
             var bullets = this.bullets.getChildren();
@@ -223,6 +202,9 @@ pc.script.create('minimap', function (context) {
             var pickables = this.pickables.getChildren();
             size = 3 * (this.size / 3);
             for(i = 0; i < pickables.length; i++) {
+                if (! pickables[i].enabled || pickables[i].script.pickable.finished)
+                    continue;
+                    
                 pos = [ pickables[i].getPosition().x, pickables[i].getPosition().z ];
                 pos[0] = pos[0] / 48 * this.canvas.width;
                 pos[1] = pos[1] / 48 * this.canvas.width;
@@ -244,16 +226,6 @@ pc.script.create('minimap', function (context) {
                 pos = [ tanks[i].getPosition().x, tanks[i].getPosition().z ];
                 pos[0] = pos[0] / 48 * this.canvas.width;
                 pos[1] = pos[1] / 48 * this.canvas.width;
-                
-                // // circle
-                // if (tanks[i].script.tank.own && Date.now() - this.lastCircle > 1300) {
-                //     this.lastCircle = Date.now();
-                //     this.circles.push({
-                //         time: Date.now(),
-                //         x: pos[0],
-                //         z: pos[1]
-                //     });
-                // }
                 
                 // dont render if flashit
                 if (! tanks[i].script.tank.flashState)

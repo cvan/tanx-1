@@ -9,29 +9,36 @@ pc.script.create('fullscreen', function (context) {
         
         if (! document.body.requestFullScreen) return;
         
+        var css = function() {/*
+            #fullscreenButton {
+               position: absolute;
+               width: 32px;
+               height: 32px;
+               top: 16px;
+               right: 16px;
+               z-index: 1;
+               cursor: pointer;
+               background-color: rgba(33, 34, 36, .75);
+               background-image: url("https://s3-eu-west-1.amazonaws.com/static.playcanvas.com/tanx/button-fs.png");
+               background-size: 16px 16px;
+               background-repeat: no-repeat;
+               background-position: center center;
+            }
+            @media all and (max-width: 640px) {
+                #fullscreenButton {
+                    top: 8px;
+                    right: 8px;
+                }
+            }
+        */};
+        css = css.toString().trim();
+        css = css.slice(css.indexOf('/*') + 2).slice(0, -3);
+        var style = document.createElement('style');
+        style.innerHTML = css;
+        document.querySelector('head').appendChild(style);
+
         var button = this.button = document.createElement('div');
         button.id = 'fullscreenButton';
-        button.style.position = 'absolute';
-        button.style.width = '0px';
-        button.style.height = '0px';
-        button.style.top = '16px';
-        button.style.left = '16px';
-        button.style.zIndex = 1;
-        button.style.borderLeft = '64px solid #212224';
-        button.style.borderBottom = '64px solid transparent';
-        button.style.cursor = 'pointer';
-        button.style.textAlign = 'right';
-        
-        var i = document.createElement('img');
-        i.src = 'https://s3-eu-west-1.amazonaws.com/static.playcanvas.com/images/fs.png';
-        i.style.position = 'absolute';
-        i.style.color = '#2ecc71';
-        i.style.top = '0px';
-        i.style.right = '20px';
-        i.style.lineHeight = '0px';
-        button.appendChild(i);
-        
-        button.script = this;
         document.body.appendChild(button);
         
         var changeState = function() {
@@ -44,16 +51,6 @@ pc.script.create('fullscreen', function (context) {
 
         button.addEventListener('click', changeState, false);
         button.addEventListener('touchstart', changeState, false);
-    };
-    
-    Fullscreen.prototype.setSize = function(size) {
-        this.button.style.borderLeftWidth = size + 'px';
-        this.button.style.borderBottomWidth = size + 'px';
-        
-        this.button.childNodes[0].style.top = (size * .08) + 'px';
-        this.button.childNodes[0].style.left = -Math.floor(size * .92) + 'px';
-        
-        this.button.childNodes[0].style.width = (size * .4) + 'px';
     };
 
     return Fullscreen;

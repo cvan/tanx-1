@@ -11,7 +11,7 @@ function Lobby() {
 Lobby.prototype.join = function(client) {
     var room = null;
     for(var i = 0; i < this.rooms.length; i++) {
-        if (this.rooms[i].clients.length < 16) {
+        if (this.rooms[i].clients.length < 12) {
             room = this.rooms[i];
             break;
         }
@@ -181,7 +181,7 @@ Lobby.prototype.update = function() {
                     tank.dead ||  // tank is dead
                     tank === bullet.owner ||  // own bullet
                     tank.team === bullet.owner.team || // friendly tank
-                    now - tank.respawned <= 1000 ||  // tank just respawned
+                    now - tank.respawned <= 2000 ||  // tank just respawned
                     tank.pos.dist(bullet.pos) > (tank.radius + bullet.radius)) {  // no collision
                     return;
                 }

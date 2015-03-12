@@ -1,4 +1,6 @@
 var tmpVec = new pc.Vec3();
+var tmpVec2 = new pc.Vec3();
+var tmpVec3 = new pc.Vec3();
 
 pc.script.create('link', function (context) {
     var Link = function (entity) {
@@ -17,13 +19,16 @@ pc.script.create('link', function (context) {
             context.mouse.on(pc.input.EVENT_MOUSEMOVE, this.onMouseMove, this);
             this.client = context.root.getChildren()[0].script.client;
             
+            context.root.getChildren()[0].script.culling.setCamera(this.entity.camera);
+            
+            this.mouse = {
+                move: false,
+                x: 0,
+                y: 0
+            };
+            
             if (! ('ontouchstart' in document.documentElement)) {
                 this.target = context.root.findByName('target');
-                this.mouse = {
-                    move: false,
-                    x: 0,
-                    y: 0
-                };
             } else {
                 context.root.findByName('target').destroy();
             }
@@ -51,18 +56,25 @@ pc.script.create('link', function (context) {
                 
                 if (target) {
                     // rotate vector
-                    var rot = this.mPos.slice(0);
-                    var t =  rot[0] * Math.sin(Math.PI * 0.75) - rot[1] * Math.cos(Math.PI * 0.75);
-                    rot[1] = rot[1] * Math.sin(Math.PI * 0.75) + rot[0] * Math.cos(Math.PI * 0.75);
-                    rot[0] = t;
+                    var rot = [ 0, 0 ];
+                    
+                    if (! this.link.script.tank.dead) {
+                        rot = this.mPos.slice(0);
+                        var t =  rot[0] * Math.sin(Math.PI * 0.75) - rot[1] * Math.cos(Math.PI * 0.75);
+                        rot[1] = rot[1] * Math.sin(Math.PI * 0.75) + rot[0] * Math.cos(Math.PI * 0.75);
+                        rot[0] = t;
+                    }
                     
                     tmpVec.set(
-                        target.getPosition().x + 8 + (rot[0] / (context.graphicsDevice.width / 2) * 4),
+                        target.getPosition().x + 8.5 + (rot[0] / (context.graphicsDevice.width / 2) * 4),
                         12,
-                        target.getPosition().z + 8 + (rot[1] / (context.graphicsDevice.height / 2) * 4)
+                        target.getPosition().z + 8.5 + (rot[1] / (context.graphicsDevice.height / 2) * 4)
                     );
-                    this.entity.setPosition(tmpVec.lerp(this.entity.getPosition(), tmpVec, 0.1));
+                } else {
+                    tmpVec.set(24 + 8.5, 12, 24 + 8.5);
                 }
+                
+                this.entity.setPosition(tmpVec.lerp(this.entity.getPosition(), tmpVec, 0.1));
                 
                 if (this.mouse && this.mouse.move) {
                     // camera offset
@@ -76,36 +88,20 @@ pc.script.create('link', function (context) {
                     
                     // targeting
                     if (! this.link.script.tank.dead) {
-                        var self = this;
-                        var from = this.entity.getPosition();
-                        var to = this.entity.camera.screenToWorld(this.mouse.x, this.mouse.y, this.entity.camera.farClip);
+                        var camPos = this.entity.getPosition();
 
-                        // raycast
-                        context.systems.rigidbody.raycastFirst(from, to, function(result) {
-                            // relative pont
-                            result.point.sub(self.link.getPosition()).normalize();
-                            // angle
-                            self.angle = Math.floor(Math.atan2(result.point.x, result.point.z) / (Math.PI / 180));
-                            // target
-                            self.link.targeting(self.angle);
-                        });
+                        var mouseWPos = this.entity.camera.screenToWorld(this.mouse.x, this.mouse.y, 1);
+        				var mouseDir = tmpVec.set(0, 0, 0).sub2(mouseWPos, camPos).normalize();
+        			    var planeNormal = tmpVec3.set(0, 1, 0);
+        			    var rayPlaneDot = planeNormal.dot(mouseDir);
+        				var pointPlaneDist = (planeNormal.dot(camPos) - 0) / rayPlaneDot;
+        				var pickedPos = mouseDir.scale(-pointPlaneDist).add(camPos);
+        				
+        				pickedPos.sub(this.link.getPosition()).normalize();
+        				this.angle = Math.floor(Math.atan2(pickedPos.x, pickedPos.z) / (Math.PI / 180));
+        				this.link.targeting(this.angle);
                     }
                 }
-                
-                // var halfW = context.graphicsDevice.width / 2;
-                // var halfH = context.graphicsDevice.height / 2;
-                
-                
-                // var screenX = (this.mouse.x - halfW) / halfW;
-                // var screenY = (this.mouse.y - halfH) / halfH;
-                // this.rayVec.set(screenX, screenY, 1.0);
-                // this.rayVec.normalize();
-                
-                // // console.log(this.rayVec.x, this.rayVec.y, this.rayVec.z)
-                
-                // this.pickHelper.setEulerAngles(this.rayVec.y * 90, this.rayVec.x * 90, 0);
-                
-                // console.log(screenX, screenY)
             }
             
             if (Date.now() - this.lastSend > 100 && this.angle !== this.lastAngle) {
@@ -120,29 +116,6 @@ pc.script.create('link', function (context) {
             this.mouse.x = evt.x;
             this.mouse.y = evt.y;
             this.mouse.move = true;
-            
-            // if (this.link) {
-            //     // camera offset
-            //     this.mPos[0] = evt.x - context.graphicsDevice.width / 2;
-            //     this.mPos[1] = evt.y - context.graphicsDevice.height / 2;
-                
-            //     // targeting
-            //     if (! this.link.script.tank.dead) {
-            //         var self = this;
-            //         var from = this.entity.getPosition();
-            //         var to = this.entity.camera.screenToWorld(evt.x, evt.y, this.entity.camera.farClip);
-    
-            //         // raycast
-            //         context.systems.rigidbody.raycastFirst(from, to, function(result) {
-            //             // relative pont
-            //             result.point.sub(self.link.getPosition()).normalize();
-            //             // angle
-            //             self.angle = Math.floor(Math.atan2(result.point.x, result.point.z) / (Math.PI / 180));
-            //             // target
-            //             self.link.targeting(self.angle);
-            //         });
-            //     }
-            // }
         },
         
         link: function(tank) {

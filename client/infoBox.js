@@ -1,33 +1,37 @@
 pc.script.create('infoBox', function (context) {
     var InfoBox = function (entity) {
         this.entity = entity;
+        
+        var css = function() {/*
+            #infoButton {
+               position: absolute;
+               width: 32px;
+               height: 32px;
+               line-height: 32px;
+               top: 16px;
+               right: 56px;
+               z-index: 1;
+               cursor: pointer;
+               color: #eee;
+               text-align: center;
+               background-color: rgba(33, 34, 36, .75);
+            }
+            @media all and (max-width: 640px) {
+                #infoButton {
+                    top: 8px;
+                    right: -48px;
+                }
+            }
+        */};
+        css = css.toString().trim();
+        css = css.slice(css.indexOf('/*') + 2).slice(0, -3);
+        var style = document.createElement('style');
+        style.innerHTML = css;
+        document.querySelector('head').appendChild(style);
 
         var button = this.button = document.createElement('div');
         button.id = 'infoButton';
-        button.style.position = 'absolute';
-        button.style.width = '0px';
-        button.style.height = '0px';
-        button.style.top = '16px';
-        button.style.right = '16px';
-        button.style.zIndex = 1;
-        button.style.borderRight = '64px solid #212224';
-        button.style.borderBottom = '64px solid transparent';
-        button.style.cursor = 'pointer';
-        button.style.textAlign = 'right';
-        
-        var i = document.createElement('div');
-        i.style.position = 'absolute';
-        i.style.fontSize = '24px';
-        i.style.fontFamily = 'Helvetica, sans-serif';
-        i.style.color = '#5e7578';
-        i.style.top = '0px';
-        i.style.right = '0px';
-        i.style.width = '0px';
-        i.style.lineHeight = '0px';
-        i.textContent = 'i';
-        button.appendChild(i);
-        
-        button.script = this;
+        button.textContent = '?';
         document.body.appendChild(button);
         
         var modal = this.modal = document.createElement('div');
@@ -43,7 +47,7 @@ pc.script.create('infoBox', function (context) {
         modal.style.backgroundColor = '#212224';
         // modal.style.color = '#2ecc71';
         modal.style.display = 'none';
-        modal.style.zIndex = 2;
+        modal.style.zIndex = 20;
         modal.style.cursor = 'pointer';
         modal.style.textAlign = 'center';
         
@@ -52,25 +56,20 @@ pc.script.create('infoBox', function (context) {
         modal.innerHTML += '<p>made during 12 hours hackathon using <a href="https://playcanvas.com/" target="_blank">PlayCanvas</a> and node.js.</p>';
         modal.innerHTML += '<p>Use WASD &amp; Mouse to control tank or Touch Joystics on mobile platforms.</p>';
         modal.innerHTML += '<p>The game features use of HTML5, WebGL, WebSockets, Canvas, Touch.</p>';
-        modal.innerHTML += '<br /><p>design: <a href="https://twitter.com/4Roonio" target="_blank">Roonio</a></p>';
-        modal.innerHTML += '<p>code: <a href="https://twitter.com/mrmaxm" target="_blank">moka</a></p>';
-        modal.innerHTML += '<br /><p>accounts and leaderboards powered by</p>';
-        modal.innerHTML += '<p><a href="https://gameup.io" target="_blank">GameUp</a></p>';
-        
+        modal.innerHTML += '<br /><p>code: <a href="https://twitter.com/mrmaxm" target="_blank">moka</a></p>';
+        modal.innerHTML += '<br /><p>art: SashaRX</p>';
+        modal.innerHTML += '<br /><p>ui: <a href="https://twitter.com/4Roonio" target="_blank">Roonio</a></p>';
+        modal.innerHTML += '<br /><p>sound: <a href="mailto:toxin136+tanx@gmail.com" target="_blank">ToXa</a></p>';
+        modal.innerHTML += '<br /><p>nicknames and leaderboards: <a href="https://gameup.io" target="_blank">GameUp</a></p>';
         
         document.body.appendChild(modal);
         
         document.body.style.fontWeight = '100';
         
         var logo = document.createElement('img');
-        logo.src = 'https://s3-eu-west-1.amazonaws.com/static.playcanvas.com/images/tanx.png';
+        logo.id = 'logo';
+        logo.src = 'https://s3-eu-west-1.amazonaws.com/static.playcanvas.com/tanx/tanx-logo-black.png';
         logo.alt = 'logo';
-        logo.style.position = 'absolute';
-        logo.style.bottom = '16px';
-        logo.style.left = '50%';
-        logo.style.width = '96px';
-        logo.style.opacity = '0.4';
-        logo.style.marginLeft = '-48px';
         document.body.appendChild(logo);
         
         modal.addEventListener('click', function() {
