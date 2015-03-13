@@ -70,7 +70,7 @@ pc.script.create('score', function (context) {
         if (client.guclient && client.gamertoken) {
             var guclient = client.guclient;
             var gamertoken = client.gamertoken;
-            guclient.updateLeaderboardRank(gamertoken, 'Leaderboard ID', score, {
+            guclient.updateLeaderboardRank(gamertoken, '70cfd64e2a6f4434be39fb71e952f0ff', score, {
                 success: function(status, response) {},
                 error: function(status, response) {
                   console.log(response);
