@@ -70,7 +70,7 @@ pc.script.create('client', function (context) {
 
     Client.prototype = {
         initialize: function () {
-            this.guclient = new GameUp.Client("1c1720c127e44de0a472f2617722ee19");
+            this.guclient = new GameUp.Client("9e0f33961b47436bad7a4bc450efc86e");
             
             this.tanks = context.root.getChildren()[0].script.tanks;
             this.bullets = context.root.getChildren()[0].script.bullets;
