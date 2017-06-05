@@ -222,7 +222,7 @@ Lobby.prototype.update = function() {
                                 winner = bullet.owner.team;
                             // total score
                             room.score++;
-                            // bullet.owner.owner.send('point', 1);
+                            bullet.owner.owner.send('point', 1);
                             // remember killer
                             tank.killer = bullet.owner.id;
                             // respawn

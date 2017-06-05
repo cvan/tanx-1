@@ -207,6 +207,8 @@ Room.prototype.join = function(client) {
     if (this.clients.indexOf(client) !== -1)
         return;
 
+    var room = this;
+
     this.clients.push(client);
     var self = this;
     client.on('disconnect', function() {
@@ -242,8 +244,32 @@ Room.prototype.join = function(client) {
         tank.shooting = state;
     });
 
-    // TODO
-    // publish user:add
+    client.on('user.name', function(text) {
+        //if (/^([a-z0-9\-_]){4,8}$/i.test(text)) {
+            client.name = text;
+
+            room.publish('user.name', {
+                id: client.id,
+                name: text
+            });
+        //}
+    });
+
+    // user.add
+    this.publish('user.add', {
+        id: client.id,
+        name: 'guest'
+    });
+
+    // user.sync
+    var users = [ ];
+    for(var i = 0; i < this.clients.length; i++) {
+        users.push({
+            id: this.clients[i].id,
+            name: this.clients[i].name || 'guest'
+        });
+    }
+    client.send('user.sync', users);
 
     // send other tanks
     this.world.forEach('tank', function(tank) {
@@ -298,8 +324,10 @@ Room.prototype.leave = function(client) {
     // event
     this.emit('leave');
 
-    // TODO
-    // publish user:remove
+    // user remove
+    this.publish('user.remove', {
+        id: client.id
+    });
 };
 
 

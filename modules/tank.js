@@ -35,7 +35,7 @@ function Tank(client) {
     this.reloading = false;
 
     this.killer = null;
-    this.died = 0;
+    this.died = Date.now();
     this.dead = true;
     this.respawned = Date.now();
 
